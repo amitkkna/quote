@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatIndianNumber } from "../utils/numberFormatter";
 
 // Define types for our table
 interface Column {
@@ -32,7 +33,7 @@ const DynamicItemsTable = ({
   const defaultColumns: Column[] = [
     { id: "serial_no", name: "S. No.", width: "8%", isRequired: true },
     { id: "description", name: "Description", width: "40%", isRequired: true },
-    { id: "amount", name: "Amount", width: "15%", isRequired: true },
+    { id: "amount", name: "Amount", width: "20%", isRequired: true },
   ];
 
   // State for columns and items
@@ -74,7 +75,7 @@ const DynamicItemsTable = ({
       } else if (column.id === "description") {
         newItem[column.id] = "";
       } else if (column.id === "amount") {
-        newItem[column.id] = 0;
+        newItem[column.id] = ""; // Empty string instead of 0
       } else {
         newItem[column.id] = ""; // Default value for custom columns
       }
@@ -123,12 +124,12 @@ const DynamicItemsTable = ({
 
     // Calculate appropriate width based on column name length
     const nameLength = newColumnName.length;
-    let columnWidth = "15%";
+    let columnWidth = "12%";
     if (nameLength > 10) {
-      columnWidth = "20%";
+      columnWidth = "15%";
     }
     if (nameLength > 15) {
-      columnWidth = "25%";
+      columnWidth = "18%";
     }
 
     const newColumn: Column = {
@@ -138,12 +139,12 @@ const DynamicItemsTable = ({
       isRequired: false,
     };
 
-    // Find the index of the description column
-    const descriptionIndex = columns.findIndex(col => col.id === "description");
+    // Find the index of the amount column
+    const amountIndex = columns.findIndex(col => col.id === "amount");
 
-    // Insert the new column after the description column
+    // Insert the new column before the amount column
     const updatedColumns = [...columns];
-    updatedColumns.splice(descriptionIndex + 1, 0, newColumn);
+    updatedColumns.splice(amountIndex, 0, newColumn);
 
     setColumns(updatedColumns);
 
@@ -249,7 +250,7 @@ const DynamicItemsTable = ({
             </button>
           </div>
           <p className="text-xs text-purple-600 mt-2">
-            Custom columns will appear after the Description column and before the Amount column.
+            Custom columns will appear before the Amount column. Each custom column will maintain its position.
           </p>
         </div>
       )}
@@ -281,7 +282,7 @@ const DynamicItemsTable = ({
                   </div>
                 </th>
               ))}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
                 Actions
               </th>
             </tr>
@@ -293,19 +294,21 @@ const DynamicItemsTable = ({
                   <td key={`${item.id}-${column.id}`} className="px-4 py-3">
                     {column.id === "amount" ? (
                       // Amount input with currency symbol
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mr-1">₹</span>
+                      <div className="relative flex items-center">
+                        <span className="absolute right-3 text-gray-500 z-10">₹</span>
                         <input
                           type="number"
-                          value={item[column.id]}
+                          value={item[column.id] || ""}
                           onChange={(e) => updateItem(
                             item.id,
                             column.id,
-                            parseFloat(e.target.value) || 0
+                            e.target.value === "" ? "" : parseFloat(e.target.value) || 0
                           )}
-                          className="block w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-right"
+                          className="block w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-right font-medium"
                           min="0"
                           step="0.01"
+                          placeholder="0.00"
+                          style={{direction: "rtl", paddingRight: "25px"}}
                         />
                       </div>
                     ) : (
@@ -320,21 +323,21 @@ const DynamicItemsTable = ({
                     )}
                   </td>
                 ))}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 text-center" style={{ width: '80px' }}>
                   <button
                     type="button"
                     onClick={() => removeItem(item.id)}
                     disabled={items.length === 1}
-                    className={`flex items-center text-sm font-medium rounded-lg px-2 py-1 transition-colors duration-200 ${
+                    className={`flex items-center justify-center text-sm font-medium rounded-full p-2 transition-colors duration-200 ${
                       items.length === 1
                         ? "text-gray-400 cursor-not-allowed"
                         : "text-red-600 hover:text-red-900 hover:bg-red-50"
                     }`}
+                    title="Remove item"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Remove
                   </button>
                 </td>
               </tr>

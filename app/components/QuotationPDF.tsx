@@ -5,6 +5,7 @@ import { Document, Page, Text, View, StyleSheet, PDFViewer, Image, pdf } from '@
 import { HEADER_IMAGE_FALLBACK, FOOTER_IMAGE_FALLBACK } from '../utils/letterheadImages';
 import { formatDate } from '../utils/dateFormatter';
 import SignatureImage from './SignatureImage';
+import { formatIndianNumber } from '../utils/numberFormatter';
 
 // Define types for our quotation
 interface QuotationItem {
@@ -85,26 +86,30 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
     borderBottomStyle: 'solid',
-    alignItems: 'center',
-    height: 28,
+    alignItems: 'flex-start',
+    minHeight: 28,
     fontSize: 10,
     fontWeight: 'normal',
-    padding: '4px 0',
+    padding: '8px 0',
   },
   serialNo: {
     width: '10%',
     paddingRight: 8,
     textAlign: 'center',
+    whiteSpace: 'normal',
   },
   description: {
-    width: '60%',
+    width: '40%',
     paddingRight: 8,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'normal',
   },
   amount: {
     width: '20%',
     textAlign: 'right',
     fontFamily: 'Helvetica-Bold',
     fontVariant: 'normal',
+    paddingRight: 15,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -253,7 +258,7 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
               return null;
             }
             return (
-              <Text key={key} style={{width: '20%', paddingRight: 8, fontSize: 9}}>
+              <Text key={key} style={{width: '12%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
                 {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </Text>
             );
@@ -275,13 +280,13 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
                 return null;
               }
               return (
-                <Text key={key} style={{width: '20%', paddingRight: 8, fontSize: 9}}>
+                <Text key={key} style={{width: '12%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
                   {item[key] || ""}
                 </Text>
               );
             })}
 
-            <Text style={{...styles.amount, fontFeatureSettings: 'tnum'}}>{item.amount ? item.amount.toFixed(2) : "0.00"}</Text>
+            <Text style={{...styles.amount, fontFeatureSettings: 'tnum'}}>{item.amount ? formatIndianNumber(item.amount) : ""}</Text>
           </View>
         ))}
 
@@ -290,21 +295,21 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
             <Text style={{ fontSize: 10, fontWeight: 'bold' }}>Subtotal:</Text>
             <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum' }}>
-              {quotation.subtotal ? quotation.subtotal.toFixed(2) : "0.00"}
+              {quotation.subtotal ? formatIndianNumber(quotation.subtotal) : ""}
             </Text>
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
             <Text style={{ fontSize: 10, fontWeight: 'bold' }}>GST ({quotation.gstRate || 0}%):</Text>
             <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum' }}>
-              {quotation.gstAmount ? quotation.gstAmount.toFixed(2) : "0.00"}
+              {quotation.gstAmount ? formatIndianNumber(quotation.gstAmount) : ""}
             </Text>
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#000', paddingTop: 5 }}>
             <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Total:</Text>
             <Text style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum' }}>
-              {quotation.total ? quotation.total.toFixed(2) : "0.00"}
+              {quotation.total ? formatIndianNumber(quotation.total) : ""}
             </Text>
           </View>
         </View>

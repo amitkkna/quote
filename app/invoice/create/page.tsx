@@ -6,6 +6,7 @@ import DynamicItemsTable from "../../components/DynamicItemsTable";
 import { amountInWords } from "../../utils/numberToWords";
 import PDFPreviewModal from "../../components/PDFPreviewModal";
 import { formatDate, parseDate } from "../../utils/dateFormatter";
+import { formatIndianNumber } from "../../utils/numberFormatter";
 
 // Define types for our invoice
 interface InvoiceItem {
@@ -100,7 +101,11 @@ export default function CreateInvoice() {
 
   // Recalculate subtotal, GST, and total
   const recalculateTotals = (updatedInvoice: InvoiceData) => {
-    const subtotal = updatedInvoice.items.reduce((sum, item) => sum + item.amount, 0);
+    const subtotal = updatedInvoice.items.reduce((sum, item) => {
+      // Convert empty strings or undefined to 0
+      const amount = item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
+      return sum + amount;
+    }, 0);
     const gstAmount = (subtotal * updatedInvoice.gstRate) / 100;
     const total = subtotal + gstAmount;
     const totalInWords = amountInWords(total);
@@ -306,7 +311,7 @@ export default function CreateInvoice() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="text-gray-800 font-medium">₹{invoice.subtotal.toFixed(2)}</span>
+                  <span className="text-gray-800 font-medium">₹{formatIndianNumber(invoice.subtotal || 0)}</span>
                 </div>
                 <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                   <span className="text-gray-600">GST:</span>
@@ -320,12 +325,12 @@ export default function CreateInvoice() {
                       max="100"
                     />
                     <span className="text-gray-600 mr-2">%</span>
-                    <span className="text-gray-800 font-medium">₹{invoice.gstAmount.toFixed(2)}</span>
+                    <span className="text-gray-800 font-medium">₹{formatIndianNumber(invoice.gstAmount || 0)}</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-lg font-bold text-gray-800">Total:</span>
-                  <span className="text-lg font-bold text-blue-600">₹{invoice.total.toFixed(2)}</span>
+                  <span className="text-lg font-bold text-blue-600">₹{formatIndianNumber(invoice.total || 0)}</span>
                 </div>
                 <div className="pt-4 mt-2 border-t border-gray-200">
                   <p className="text-gray-600 italic text-sm">

@@ -6,6 +6,7 @@ import DynamicItemsTable from "../../components/DynamicItemsTable";
 import { amountInWords } from "../../utils/numberToWords";
 import PDFPreviewModal from "../../components/PDFPreviewModal";
 import { formatDate, parseDate } from "../../utils/dateFormatter";
+import { formatIndianNumber } from "../../utils/numberFormatter";
 
 // Define types for our quotation
 interface QuotationItem {
@@ -102,7 +103,11 @@ export default function CreateQuotation() {
 
   // Recalculate subtotal, GST, and total
   const recalculateTotals = (updatedQuotation: QuotationData) => {
-    const subtotal = updatedQuotation.items.reduce((sum, item) => sum + item.amount, 0);
+    const subtotal = updatedQuotation.items.reduce((sum, item) => {
+      // Convert empty strings or undefined to 0
+      const amount = item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
+      return sum + amount;
+    }, 0);
     const gstAmount = (subtotal * updatedQuotation.gstRate) / 100;
     const total = subtotal + gstAmount;
     const totalInWords = amountInWords(total);
@@ -314,7 +319,7 @@ export default function CreateQuotation() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="text-gray-800 font-medium">₹{quotation.subtotal.toFixed(2)}</span>
+                  <span className="text-gray-800 font-medium">₹{formatIndianNumber(quotation.subtotal || 0)}</span>
                 </div>
                 <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                   <span className="text-gray-600">GST:</span>
@@ -328,12 +333,12 @@ export default function CreateQuotation() {
                       max="100"
                     />
                     <span className="text-gray-600 mr-2">%</span>
-                    <span className="text-gray-800 font-medium">₹{quotation.gstAmount.toFixed(2)}</span>
+                    <span className="text-gray-800 font-medium">₹{formatIndianNumber(quotation.gstAmount || 0)}</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-lg font-bold text-gray-800">Total:</span>
-                  <span className="text-lg font-bold text-purple-600">₹{quotation.total.toFixed(2)}</span>
+                  <span className="text-lg font-bold text-purple-600">₹{formatIndianNumber(quotation.total || 0)}</span>
                 </div>
                 <div className="pt-4 mt-2 border-t border-gray-200">
                   <p className="text-gray-600 italic text-sm">
