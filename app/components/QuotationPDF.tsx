@@ -30,6 +30,15 @@ interface QuotationData {
   gstAmount: number;
   total: number;
   amountInWords: string;
+  // Company-specific fields
+  companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  companyGST?: string;
+  headerImage?: string;
+  footerImage?: string;
+  signatureImage?: string;
 }
 
 // Create styles
@@ -105,11 +114,12 @@ const styles = StyleSheet.create({
     whiteSpace: 'normal',
   },
   amount: {
-    width: '20%',
+    width: '35%',
     textAlign: 'right',
     fontFamily: 'Helvetica-Bold',
     fontVariant: 'normal',
-    paddingRight: 15,
+    paddingRight: 0,
+    marginRight: 0,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -206,13 +216,22 @@ export interface QuotationPDFRef {
 
 // Create Document Component
 const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>(({ quotation }, ref) => {
+  // Use company-specific details or fallback to defaults
+  const companyName = quotation.companyName || "Global Digital Connect";
+  const companyAddress = quotation.companyAddress || "320, Regus, Magnato Mall, VIP Chowk, Raipur- 492006";
+  const companyPhone = quotation.companyPhone || "9685047519";
+  const companyEmail = quotation.companyEmail || "prateek@globaldigitalconnect.com";
+  const headerImage = quotation.headerImage || HEADER_IMAGE_FALLBACK;
+  const footerImage = quotation.footerImage || FOOTER_IMAGE_FALLBACK;
+  const signatureImage = quotation.signatureImage || "/signature.jpg";
+
   // Create a document that can be used for both viewing and downloading
   const QuotationDocument = (
     <Document>
       <Page size="A4" style={styles.page}>
           {/* Letterhead Header */}
           <Image
-            src={HEADER_IMAGE_FALLBACK}
+            src={headerImage}
             style={styles.headerImage}
           />
 
@@ -223,11 +242,13 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
           <View style={styles.detailsContainer}>
             <View style={styles.detailsLeft}>
               <Text style={{...styles.subheader, fontSize: 11, marginBottom: 4}}>From:</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>Global Digital Connect</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>320, Regus, Magnato Mall</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>VIP Chowk, Raipur- 492006</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>Phone: 9685047519</Text>
-              <Text style={{fontSize: 10}}>Email: prateek@globaldigitalconnect.com</Text>
+              <Text style={{fontSize: 10, marginBottom: 2}}>{companyName}</Text>
+              <Text style={{fontSize: 10, marginBottom: 2}}>{companyAddress}</Text>
+              <Text style={{fontSize: 10, marginBottom: 2}}>Phone: {companyPhone}</Text>
+              <Text style={{fontSize: 10}}>Email: {companyEmail}</Text>
+              {quotation.companyGST && (
+                <Text style={{fontSize: 10, marginTop: 2}}>GST: {quotation.companyGST}</Text>
+              )}
             </View>
             <View style={styles.detailsRight}>
               <Text style={{...styles.subheader, fontSize: 11, marginBottom: 4}}>To:</Text>
@@ -258,13 +279,13 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
               return null;
             }
             return (
-              <Text key={key} style={{width: '12%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
+              <Text key={key} style={{width: '8%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
                 {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </Text>
             );
           })}
 
-          <Text style={styles.amount}>Amount</Text>
+          <Text style={{...styles.amount, textAlign: 'right'}}>Amount</Text>
         </View>
 
         {/* Table Rows */}
@@ -280,35 +301,35 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
                 return null;
               }
               return (
-                <Text key={key} style={{width: '12%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
+                <Text key={key} style={{width: '8%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
                   {item[key] || ""}
                 </Text>
               );
             })}
 
-            <Text style={{...styles.amount, fontFeatureSettings: 'tnum'}}>{item.amount ? formatIndianNumber(item.amount) : ""}</Text>
+            <Text style={{...styles.amount, textAlign: 'right', fontFeatureSettings: 'tnum'}}>{item.amount ? formatIndianNumber(item.amount) : ""}</Text>
           </View>
         ))}
 
         {/* Table Footer - Totals */}
-        <View style={{ marginTop: 20, alignSelf: 'flex-end', width: '40%' }}>
+        <View style={{ marginTop: 20, alignSelf: 'flex-end', width: '35%' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
             <Text style={{ fontSize: 10, fontWeight: 'bold' }}>Subtotal:</Text>
-            <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum' }}>
+            <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum', textAlign: 'right' }}>
               {quotation.subtotal ? formatIndianNumber(quotation.subtotal) : ""}
             </Text>
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
             <Text style={{ fontSize: 10, fontWeight: 'bold' }}>GST ({quotation.gstRate || 0}%):</Text>
-            <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum' }}>
+            <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum', textAlign: 'right' }}>
               {quotation.gstAmount ? formatIndianNumber(quotation.gstAmount) : ""}
             </Text>
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#000', paddingTop: 5 }}>
             <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Total:</Text>
-            <Text style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum' }}>
+            <Text style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum', textAlign: 'right' }}>
               {quotation.total ? formatIndianNumber(quotation.total) : ""}
             </Text>
           </View>
@@ -338,11 +359,11 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
         </View>
 
         {/* Signature */}
-        <SignatureImage />
+        <SignatureImage signatureImage={signatureImage} />
 
         {/* Letterhead Footer */}
         <Image
-          src={FOOTER_IMAGE_FALLBACK}
+          src={footerImage}
           style={styles.footerImage}
         />
       </Page>

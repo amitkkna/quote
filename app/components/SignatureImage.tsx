@@ -14,11 +14,15 @@ const styles = StyleSheet.create({
 });
 
 // Signature component
-const SignatureImage = () => {
+interface SignatureImageProps {
+  signatureImage?: string;
+}
+
+const SignatureImage: React.FC<SignatureImageProps> = ({ signatureImage = "/signature.jpg" }) => {
   return (
     <View style={styles.signatureContainer}>
       <Image
-        src="/signature.jpg"
+        src={signatureImage}
         style={{ width: '100%', height: 'auto' }}
       />
     </View>
