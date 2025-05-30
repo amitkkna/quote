@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import DynamicItemsTable from "../../components/DynamicItemsTable";
 import { amountInWords } from "../../utils/numberToWords";
-import PDFPreviewModal from "../../components/PDFPreviewModal";
 import { formatDate, parseDate } from "../../utils/dateFormatter";
 import { formatIndianNumber } from "../../utils/numberFormatter";
+
+// Dynamic import for PDF components to prevent SSR issues
+const PDFPreviewModal = dynamic(() => import("../../components/PDFPreviewModal"), {
+  ssr: false,
+  loading: () => <div>Loading PDF...</div>
+});
 
 // Define types for our invoice
 interface InvoiceItem {

@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { amountInWords } from "../utils/numberToWords";
 import { formatDate, parseDate } from "../utils/dateFormatter";
 import { formatIndianNumber } from "../utils/numberFormatter";
-import QuotationPDF from "../components/QuotationPDF";
-import PDFPreviewModal from "../components/PDFPreviewModal";
+
+// Dynamic import for PDF components to prevent SSR issues
+const PDFPreviewModal = dynamic(() => import("../components/PDFPreviewModal"), {
+  ssr: false,
+  loading: () => <div>Loading PDF...</div>
+});
 
 // Define types
 interface QuotationItem {
