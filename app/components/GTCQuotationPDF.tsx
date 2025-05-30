@@ -53,18 +53,21 @@ const styles = StyleSheet.create({
     padding: 0,
     position: 'relative',
     fontFamily: 'Helvetica',
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   contentContainer: {
     padding: 40,
-    paddingTop: 160,
-    paddingBottom: 160,
+    paddingTop: 130,
+    paddingBottom: 130,
     flexGrow: 1,
     position: 'relative',
     zIndex: 2,
+    minHeight: 'auto',
   },
   headerImage: {
     position: 'absolute',
-    top: 0,
+    top: 20,
     left: 0,
     width: '100%',
     height: 'auto',
@@ -72,7 +75,7 @@ const styles = StyleSheet.create({
   },
   footerImage: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 20,
     left: 0,
     width: '100%',
     height: 'auto',
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   descriptionCell: {
-    width: '72%',
+    width: '52%',
     padding: 8,
     fontSize: 10,
   },
@@ -165,11 +168,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    wrap: false,
   },
   summaryBox: {
     width: '40%',
     border: '2 solid #B91C1C',
     backgroundColor: '#FEF2F2',
+    wrap: false,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -188,11 +193,13 @@ const styles = StyleSheet.create({
   },
   // Corporate footer sections
   corporateSection: {
-    marginTop: 25,
+    marginTop: 30,
+    marginBottom: 15,
     padding: 15,
     backgroundColor: '#F9FAFB',
     border: '1 solid #E5E7EB',
     borderRadius: 4,
+    wrap: false,
   },
   sectionTitle: {
     fontSize: 11,
@@ -276,38 +283,66 @@ const GTCQuotationPDF = forwardRef<GTCQuotationPDFRef, { quotation: QuotationDat
             <View style={styles.tableHeader}>
               <Text style={styles.serialCell}>Sr.</Text>
               <Text style={styles.descriptionCell}>Description of Goods/Services</Text>
-              <Text style={styles.amountCell}>Amount (₹)</Text>
+
+              {/* Render custom column headers */}
+              {quotation.items[0] && Object.keys(quotation.items[0]).map(key => {
+                // Skip standard columns
+                if (["id", "serial_no", "description", "amount"].includes(key)) {
+                  return null;
+                }
+                return (
+                  <Text key={key} style={{width: '10%', padding: 8, fontSize: 9, textAlign: 'center', color: '#FFFFFF', fontWeight: 'bold'}}>
+                    {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </Text>
+                );
+              })}
+
+              <Text style={styles.amountCell}>Amount</Text>
             </View>
-            
+
             {quotation.items.map((item, index) => (
               <View key={item.id} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
                 <Text style={styles.serialCell}>{index + 1}</Text>
                 <Text style={styles.descriptionCell}>{item.description}</Text>
+
+                {/* Render custom column values */}
+                {Object.keys(item).map(key => {
+                  // Skip standard columns
+                  if (["id", "serial_no", "description", "amount"].includes(key)) {
+                    return null;
+                  }
+                  return (
+                    <Text key={key} style={{width: '10%', padding: 8, fontSize: 9, textAlign: 'center'}}>
+                      {item[key] || ""}
+                    </Text>
+                  );
+                })}
+
                 <Text style={styles.amountCell}>{formatIndianNumber(item.amount || 0)}</Text>
               </View>
             ))}
           </View>
 
-          {/* Corporate Summary */}
-          <View style={styles.summaryContainer}>
-            <View style={styles.summaryBox}>
+          {/* Corporate Summary - Wrapped to prevent page breaks */}
+          <View style={{...styles.summaryContainer, minHeight: 120}}>
+            <View style={{...styles.summaryBox, minHeight: 120}}>
               <View style={styles.summaryRow}>
                 <Text style={{fontSize: 10}}>Subtotal:</Text>
-                <Text style={{fontSize: 10, fontWeight: 'bold'}}>₹ {formatIndianNumber(quotation.subtotal || 0)}</Text>
+                <Text style={{fontSize: 10, fontWeight: 'bold'}}>{formatIndianNumber(quotation.subtotal || 0)}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={{fontSize: 10}}>GST ({quotation.gstRate}%):</Text>
-                <Text style={{fontSize: 10, fontWeight: 'bold'}}>₹ {formatIndianNumber(quotation.gstAmount || 0)}</Text>
+                <Text style={{fontSize: 10, fontWeight: 'bold'}}>{formatIndianNumber(quotation.gstAmount || 0)}</Text>
               </View>
               <View style={styles.summaryRowTotal}>
                 <Text>TOTAL AMOUNT:</Text>
-                <Text>₹ {formatIndianNumber(quotation.total || 0)}</Text>
+                <Text>{formatIndianNumber(quotation.total || 0)}</Text>
               </View>
             </View>
           </View>
 
           {/* Amount in Words */}
-          <View style={{marginTop: 15, padding: 10, backgroundColor: '#FEF2F2', border: '1 solid #FECACA'}}>
+          <View style={{marginTop: 20, marginBottom: 15, padding: 10, backgroundColor: '#FEF2F2', border: '1 solid #FECACA', wrap: false}}>
             <Text style={{fontSize: 10, fontWeight: 'bold', color: '#B91C1C'}}>
               Amount in Words: {quotation.amountInWords}
             </Text>

@@ -53,18 +53,21 @@ const styles = StyleSheet.create({
     padding: 0,
     position: 'relative',
     fontFamily: 'Helvetica',
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   contentContainer: {
     padding: 35,
-    paddingTop: 150,
-    paddingBottom: 150,
+    paddingTop: 120,
+    paddingBottom: 120,
     flexGrow: 1,
     position: 'relative',
     zIndex: 2,
+    minHeight: 'auto',
   },
   headerImage: {
     position: 'absolute',
-    top: 0,
+    top: 20,
     left: 0,
     width: '100%',
     height: 'auto',
@@ -72,7 +75,7 @@ const styles = StyleSheet.create({
   },
   footerImage: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 20,
     left: 0,
     width: '100%',
     height: 'auto',
@@ -150,7 +153,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   descriptionColumn: {
-    width: '65%',
+    width: '45%',
     fontSize: 10,
     paddingLeft: 5,
   },
@@ -164,10 +167,12 @@ const styles = StyleSheet.create({
   summarySection: {
     marginTop: 20,
     alignItems: 'flex-end',
+    wrap: false,
   },
   summaryTable: {
     width: '50%',
     border: '2 solid #0369A1',
+    wrap: false,
   },
   summaryHeaderRow: {
     flexDirection: 'row',
@@ -195,11 +200,13 @@ const styles = StyleSheet.create({
   },
   // Traditional amount in words box
   amountWordsBox: {
-    marginTop: 20,
+    marginTop: 25,
+    marginBottom: 15,
     padding: 15,
     backgroundColor: '#F0F9FF',
     border: '2 solid #0369A1',
     borderRadius: 5,
+    wrap: false,
   },
   amountWordsTitle: {
     fontSize: 10,
@@ -214,10 +221,12 @@ const styles = StyleSheet.create({
   },
   // Traditional sections
   traditionalSection: {
-    marginTop: 20,
+    marginTop: 25,
+    marginBottom: 15,
     padding: 12,
     border: '1 solid #0369A1',
     borderRadius: 4,
+    wrap: false,
   },
   sectionHeader: {
     fontSize: 10,
@@ -310,21 +319,49 @@ const RudharmaQuotationPDF = forwardRef<RudharmaQuotationPDFRef, { quotation: Qu
             <View style={styles.tableHeader}>
               <Text style={styles.serialColumn}>S.No.</Text>
               <Text style={styles.descriptionColumn}>Particulars</Text>
+
+              {/* Render custom column headers */}
+              {quotation.items[0] && Object.keys(quotation.items[0]).map(key => {
+                // Skip standard columns
+                if (["id", "serial_no", "description", "amount"].includes(key)) {
+                  return null;
+                }
+                return (
+                  <Text key={key} style={{width: '12%', padding: 8, fontSize: 9, textAlign: 'center', color: '#FFFFFF', fontWeight: 'bold'}}>
+                    {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </Text>
+                );
+              })}
+
               <Text style={styles.amountColumn}>Amount (Rs.)</Text>
             </View>
-            
+
             {quotation.items.map((item, index) => (
               <View key={item.id} style={index % 2 === 0 ? styles.tableRow : styles.tableRowEven}>
                 <Text style={styles.serialColumn}>{index + 1}.</Text>
                 <Text style={styles.descriptionColumn}>{item.description}</Text>
+
+                {/* Render custom column values */}
+                {Object.keys(item).map(key => {
+                  // Skip standard columns
+                  if (["id", "serial_no", "description", "amount"].includes(key)) {
+                    return null;
+                  }
+                  return (
+                    <Text key={key} style={{width: '12%', padding: 8, fontSize: 9, textAlign: 'center'}}>
+                      {item[key] || ""}
+                    </Text>
+                  );
+                })}
+
                 <Text style={styles.amountColumn}>{formatIndianNumber(item.amount || 0)}/-</Text>
               </View>
             ))}
           </View>
 
-          {/* Traditional Summary */}
-          <View style={styles.summarySection}>
-            <View style={styles.summaryTable}>
+          {/* Traditional Summary - Wrapped to prevent page breaks */}
+          <View style={{...styles.summarySection, minHeight: 120}}>
+            <View style={{...styles.summaryTable, minHeight: 120}}>
               <View style={styles.summaryHeaderRow}>
                 <Text style={{width: '100%', textAlign: 'center'}}>QUOTATION SUMMARY</Text>
               </View>
