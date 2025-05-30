@@ -3,6 +3,8 @@
 import React, { useEffect, useRef } from 'react';
 import InvoicePDF, { InvoicePDFRef } from './InvoicePDF';
 import QuotationPDF, { QuotationPDFRef } from './QuotationPDF';
+import GTCQuotationPDF, { GTCQuotationPDFRef } from './GTCQuotationPDF';
+import RudharmaQuotationPDF, { RudharmaQuotationPDFRef } from './RudharmaQuotationPDF';
 import ChallanPDF from './ChallanPDF';
 
 interface ChallanPDFRef {
@@ -25,6 +27,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const invoicePdfRef = useRef<InvoicePDFRef>(null);
   const quotationPdfRef = useRef<QuotationPDFRef>(null);
+  const gtcQuotationPdfRef = useRef<GTCQuotationPDFRef>(null);
+  const rudharmaQuotationPdfRef = useRef<RudharmaQuotationPDFRef>(null);
   const challanPdfRef = useRef<ChallanPDFRef>(null);
 
   // Close modal when clicking outside
@@ -65,12 +69,25 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
 
   // Handle download button click
   const handleDownload = async () => {
-    if (documentType === 'invoice' && invoicePdfRef.current) {
-      await invoicePdfRef.current.downloadPDF();
-    } else if (documentType === 'quotation' && quotationPdfRef.current) {
-      await quotationPdfRef.current.downloadPDF();
-    } else if (documentType === 'challan' && challanPdfRef.current) {
-      await challanPdfRef.current.downloadPDF();
+    try {
+      if (documentType === 'invoice' && invoicePdfRef.current) {
+        await invoicePdfRef.current.downloadPDF();
+      } else if (documentType === 'quotation') {
+        // Determine which quotation PDF to use based on company
+        const companyName = data.companyName || '';
+        if (companyName.includes('Global Trading Corporation') && gtcQuotationPdfRef.current) {
+          await gtcQuotationPdfRef.current.downloadPDF();
+        } else if (companyName.includes('Rudharma') && rudharmaQuotationPdfRef.current) {
+          await rudharmaQuotationPdfRef.current.downloadPDF();
+        } else if (quotationPdfRef.current) {
+          await quotationPdfRef.current.downloadPDF();
+        }
+      } else if (documentType === 'challan' && challanPdfRef.current) {
+        await challanPdfRef.current.downloadPDF();
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Error downloading PDF. Please try again.');
     }
   };
 
@@ -104,7 +121,17 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
             {documentType === 'invoice' ? (
               <InvoicePDF ref={invoicePdfRef} invoice={data} />
             ) : documentType === 'quotation' ? (
-              <QuotationPDF ref={quotationPdfRef} quotation={data} />
+              // Render appropriate quotation PDF based on company
+              (() => {
+                const companyName = data.companyName || '';
+                if (companyName.includes('Global Trading Corporation')) {
+                  return <GTCQuotationPDF ref={gtcQuotationPdfRef} quotation={data} />;
+                } else if (companyName.includes('Rudharma')) {
+                  return <RudharmaQuotationPDF ref={rudharmaQuotationPdfRef} quotation={data} />;
+                } else {
+                  return <QuotationPDF ref={quotationPdfRef} quotation={data} />;
+                }
+              })()
             ) : (
               <ChallanPDF ref={challanPdfRef} challan={data} />
             )}
