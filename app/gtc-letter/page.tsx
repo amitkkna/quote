@@ -1,7 +1,20 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import GTCLetterPDF, { GTCLetterPDFRef } from '../components/GTCLetterPDF';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for PDF component to avoid SSR issues
+const GTCLetterPDF = dynamic(() => import('../components/GTCLetterPDF'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-96">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading PDF viewer...</p>
+      </div>
+    </div>
+  )
+});
 
 interface LetterData {
   date: string;
@@ -45,7 +58,7 @@ Signature`
   });
 
   const [showPreview, setShowPreview] = useState(false);
-  const pdfRef = useRef<GTCLetterPDFRef>(null);
+  const pdfRef = useRef<any>(null);
 
   const handleInputChange = (field: keyof LetterData, value: string) => {
     setLetterData(prev => ({

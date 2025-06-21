@@ -11,6 +11,17 @@
       "static/chunks/146.3b7c2da5a385b7ed.js"
     ]
   },
+  "app\\gtc-letter\\page.tsx -> ../components/GTCLetterPDF": {
+    "id": 8583,
+    "files": [
+      "static/chunks/b2d98e07-0642eb49b993a78c.js",
+      "static/chunks/ff804112-80ec40b4c54ce359.js",
+      "static/chunks/11390db7-80d5209fd4ae8f21.js",
+      "static/chunks/7064611b-fcca72f24a4e08bf.js",
+      "static/chunks/567-3f4b039fe2144410.js",
+      "static/chunks/696.0d10bd0e09cec9ef.js"
+    ]
+  },
   "app\\gtc-quotation\\page.tsx -> ../components/PDFPreviewModal": {
     "id": 5755,
     "files": [
@@ -20,6 +31,17 @@
       "static/chunks/7064611b-fcca72f24a4e08bf.js",
       "static/chunks/567-3f4b039fe2144410.js",
       "static/chunks/643-5837e7b19cfb4c9c.js"
+    ]
+  },
+  "app\\gtc-table\\page.tsx -> ../components/GTCTablePDF": {
+    "id": 8565,
+    "files": [
+      "static/chunks/b2d98e07-0642eb49b993a78c.js",
+      "static/chunks/ff804112-80ec40b4c54ce359.js",
+      "static/chunks/11390db7-80d5209fd4ae8f21.js",
+      "static/chunks/7064611b-fcca72f24a4e08bf.js",
+      "static/chunks/567-3f4b039fe2144410.js",
+      "static/chunks/389.49eb6fff6830ae12.js"
     ]
   },
   "app\\invoice\\create\\page.tsx -> ../../components/PDFPreviewModal": {

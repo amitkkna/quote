@@ -1,7 +1,20 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import GTCTablePDF, { GTCTablePDFRef } from '../components/GTCTablePDF';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for PDF component to avoid SSR issues
+const GTCTablePDF = dynamic(() => import('../components/GTCTablePDF'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-96">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading PDF viewer...</p>
+      </div>
+    </div>
+  )
+});
 
 interface ImageItem {
   id: string;
@@ -41,7 +54,7 @@ export default function GTCTablePage() {
 
   const [rawData, setRawData] = useState('');
   const [showPreview, setShowPreview] = useState(false);
-  const pdfRef = useRef<GTCTablePDFRef>(null);
+  const pdfRef = useRef<any>(null);
 
   const parseTableData = (text: string) => {
     const lines = text.trim().split('\n').filter(line => line.trim());

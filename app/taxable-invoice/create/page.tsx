@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import TaxableInvoiceItemsTable from "../../components/TaxableInvoiceItemsTable";
 import PDFPreviewModal from "../../components/PDFPreviewModal";
+import dynamic from 'next/dynamic';
 
 interface InvoiceItem {
   id: string;
