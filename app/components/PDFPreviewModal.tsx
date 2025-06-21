@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
-import InvoicePDF, { InvoicePDFRef } from './InvoicePDF';
-import QuotationPDF, { QuotationPDFRef } from './QuotationPDF';
-import GTCQuotationPDF, { GTCQuotationPDFRef } from './GTCQuotationPDF';
-import RudharmaQuotationPDF, { RudharmaQuotationPDFRef } from './RudharmaQuotationPDF';
-import ChallanPDF from './ChallanPDF';
-import TaxableInvoicePDF from './TaxableInvoicePDF';
+import React, { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for all PDF components to avoid SSR issues
+const InvoicePDF = dynamic(() => import('./InvoicePDF'), { ssr: false });
+const QuotationPDF = dynamic(() => import('./QuotationPDF'), { ssr: false });
+const GTCQuotationPDF = dynamic(() => import('./GTCQuotationPDF'), { ssr: false });
+const RudharmaQuotationPDF = dynamic(() => import('./RudharmaQuotationPDF'), { ssr: false });
+const ChallanPDF = dynamic(() => import('./ChallanPDF'), { ssr: false });
+const TaxableInvoicePDF = dynamic(() => import('./TaxableInvoicePDF'), { ssr: false });
 
 interface ChallanPDFRef {
   downloadPDF: () => Promise<void>;
@@ -30,12 +33,17 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   data
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const invoicePdfRef = useRef<InvoicePDFRef>(null);
-  const quotationPdfRef = useRef<QuotationPDFRef>(null);
-  const gtcQuotationPdfRef = useRef<GTCQuotationPDFRef>(null);
-  const rudharmaQuotationPdfRef = useRef<RudharmaQuotationPDFRef>(null);
-  const challanPdfRef = useRef<ChallanPDFRef>(null);
-  const taxableInvoicePdfRef = useRef<TaxableInvoicePDFRef>(null);
+  const invoicePdfRef = useRef<any>(null);
+  const quotationPdfRef = useRef<any>(null);
+  const gtcQuotationPdfRef = useRef<any>(null);
+  const rudharmaQuotationPdfRef = useRef<any>(null);
+  const challanPdfRef = useRef<any>(null);
+  const taxableInvoicePdfRef = useRef<any>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -127,7 +135,14 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
 
         <div className="flex-grow overflow-auto p-5 bg-gray-50">
           <div className="bg-white rounded-lg shadow-md p-2 h-full">
-            {documentType === 'invoice' ? (
+            {!isClient ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading PDF viewer...</p>
+                </div>
+              </div>
+            ) : documentType === 'invoice' ? (
               <InvoicePDF ref={invoicePdfRef} invoice={data} />
             ) : documentType === 'quotation' ? (
               // Render appropriate quotation PDF based on company
