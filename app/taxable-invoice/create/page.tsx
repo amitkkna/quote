@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import TaxableInvoiceItemsTable from "../../components/TaxableInvoiceItemsTable";
-import PDFPreviewModal from "../../components/PDFPreviewModal";
-import dynamic from 'next/dynamic';
+import ClientOnlyPDFModal from "../../components/ClientOnlyPDFModal";
 
 interface InvoiceItem {
   id: string;
@@ -542,7 +541,7 @@ export default function CreateTaxableInvoice() {
 
         {/* PDF Preview Modal */}
         {showPreview && (
-          <PDFPreviewModal
+          <ClientOnlyPDFModal
             isOpen={showPreview}
             onClose={() => setShowPreview(false)}
             documentType="taxable-invoice"
