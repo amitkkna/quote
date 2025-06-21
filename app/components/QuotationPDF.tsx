@@ -6,6 +6,7 @@ import { HEADER_IMAGE_FALLBACK, FOOTER_IMAGE_FALLBACK } from '../utils/letterhea
 import { formatDate } from '../utils/dateFormatter';
 import SignatureImage from './SignatureImage';
 import { formatIndianNumber } from '../utils/numberFormatter';
+import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
 
 // Define types for our quotation
 interface QuotationItem {
@@ -420,9 +421,11 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
   }));
 
   return (
-    <PDFViewer style={{ width: '100%', height: '600px' }}>
-      {QuotationDocument}
-    </PDFViewer>
+    <ClientOnlyPDFViewer>
+      <PDFViewer style={{ width: '100%', height: '600px' }}>
+        {QuotationDocument}
+      </PDFViewer>
+    </ClientOnlyPDFViewer>
   );
 });
 

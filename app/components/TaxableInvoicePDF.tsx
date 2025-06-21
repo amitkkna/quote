@@ -6,6 +6,7 @@ import { formatDate } from "../utils/dateFormatter";
 import { formatCurrency } from "../utils/numberFormatter";
 import { numberToWords } from "../utils/numberToWords";
 import { getSignatureImage, getSealImage } from "../utils/letterheadImages";
+import ClientOnlyPDFViewer from "./ClientOnlyPDFViewer";
 
 const styles = StyleSheet.create({
   page: {
@@ -460,9 +461,11 @@ const TaxableInvoicePDF = forwardRef<{ downloadPDF: () => Promise<void> }, Taxab
   }));
 
   return (
-    <PDFViewer style={{ width: '100%', height: '600px' }}>
-      <TaxableInvoiceDocument {...props} />
-    </PDFViewer>
+    <ClientOnlyPDFViewer>
+      <PDFViewer style={{ width: '100%', height: '600px' }}>
+        <TaxableInvoiceDocument {...props} />
+      </PDFViewer>
+    </ClientOnlyPDFViewer>
   );
 });
 

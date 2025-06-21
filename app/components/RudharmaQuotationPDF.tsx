@@ -5,6 +5,7 @@ import { Document, Page, Text, View, StyleSheet, PDFViewer, Image, pdf } from '@
 import { formatDate } from '../utils/dateFormatter';
 import SignatureImage from './SignatureImage';
 import { formatIndianNumber } from '../utils/numberFormatter';
+import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
 
 // Define types for our quotation
 interface QuotationItem {
@@ -451,9 +452,11 @@ const RudharmaQuotationPDF = forwardRef<RudharmaQuotationPDFRef, { quotation: Qu
   }));
 
   return (
-    <PDFViewer style={{ width: '100%', height: '600px' }}>
-      {QuotationDocument}
-    </PDFViewer>
+    <ClientOnlyPDFViewer>
+      <PDFViewer style={{ width: '100%', height: '600px' }}>
+        {QuotationDocument}
+      </PDFViewer>
+    </ClientOnlyPDFViewer>
   );
 });
 

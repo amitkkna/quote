@@ -20,7 +20,7 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     // Handle react-pdf ES module issues
     if (isServer) {
-      config.externals = [...config.externals, 'canvas', 'jsdom'];
+      config.externals = [...config.externals, 'canvas', 'jsdom', '@react-pdf/renderer'];
     }
 
     config.resolve.alias = {
@@ -37,6 +37,13 @@ const nextConfig = {
         fullySpecified: false,
       },
     });
+
+    // Exclude react-pdf from server-side bundling
+    if (isServer) {
+      config.externals.push({
+        '@react-pdf/renderer': '@react-pdf/renderer',
+      });
+    }
 
     return config;
   },

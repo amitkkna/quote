@@ -2,6 +2,7 @@
 
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, Image, pdf } from '@react-pdf/renderer';
+import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
 
 // Image Item Interface
 interface ImageItem {
@@ -329,9 +330,11 @@ const GTCTablePDF = forwardRef<GTCTablePDFRef, GTCTablePDFProps>(({ tableData },
   }));
 
   return (
-    <PDFViewer style={{ width: '100%', height: '600px' }}>
-      {TableDocument}
-    </PDFViewer>
+    <ClientOnlyPDFViewer>
+      <PDFViewer style={{ width: '100%', height: '600px' }}>
+        {TableDocument}
+      </PDFViewer>
+    </ClientOnlyPDFViewer>
   );
 });
 

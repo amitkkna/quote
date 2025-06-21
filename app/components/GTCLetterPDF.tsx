@@ -2,6 +2,7 @@
 
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, Image, pdf } from '@react-pdf/renderer';
+import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
 
 // Letter Data Interface
 interface LetterData {
@@ -239,9 +240,11 @@ const GTCLetterPDF = forwardRef<GTCLetterPDFRef, GTCLetterPDFProps>(({ letterDat
   }));
 
   return (
-    <PDFViewer style={{ width: '100%', height: '600px' }}>
-      {LetterDocument}
-    </PDFViewer>
+    <ClientOnlyPDFViewer>
+      <PDFViewer style={{ width: '100%', height: '600px' }}>
+        {LetterDocument}
+      </PDFViewer>
+    </ClientOnlyPDFViewer>
   );
 });
 

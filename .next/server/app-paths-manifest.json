@@ -7,10 +7,10 @@
   "/invoice/list/page": "app/invoice/list/page.js",
   "/gtc-table/page": "app/gtc-table/page.js",
   "/invoice/create/page": "app/invoice/create/page.js",
+  "/quotation/list/page": "app/quotation/list/page.js",
   "/page": "app/page.js",
   "/quotation/create/page": "app/quotation/create/page.js",
+  "/taxable-invoice/create/page": "app/taxable-invoice/create/page.js",
   "/rudharma-quotation/page": "app/rudharma-quotation/page.js",
-  "/taxable-invoice/list/page": "app/taxable-invoice/list/page.js",
-  "/quotation/list/page": "app/quotation/list/page.js",
-  "/taxable-invoice/create/page": "app/taxable-invoice/create/page.js"
+  "/taxable-invoice/list/page": "app/taxable-invoice/list/page.js"
 }
