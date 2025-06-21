@@ -52,3 +52,13 @@ export const formatIndianNumber = (num: number | string | undefined | null, deci
     ? formattedWholePart + "." + decimalPart
     : formattedWholePart;
 };
+
+/**
+ * Format a number as currency with Indian style comma separators
+ * @param num The number to format
+ * @param decimals Number of decimal places (default: 2)
+ * @returns Formatted currency string (e.g., "25,000.00")
+ */
+export const formatCurrency = (num: number | string | undefined | null, decimals: number = 2): string => {
+  return formatIndianNumber(num, decimals);
+};

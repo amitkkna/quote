@@ -6,15 +6,20 @@ import QuotationPDF, { QuotationPDFRef } from './QuotationPDF';
 import GTCQuotationPDF, { GTCQuotationPDFRef } from './GTCQuotationPDF';
 import RudharmaQuotationPDF, { RudharmaQuotationPDFRef } from './RudharmaQuotationPDF';
 import ChallanPDF from './ChallanPDF';
+import TaxableInvoicePDF from './TaxableInvoicePDF';
 
 interface ChallanPDFRef {
+  downloadPDF: () => Promise<void>;
+}
+
+interface TaxableInvoicePDFRef {
   downloadPDF: () => Promise<void>;
 }
 
 interface PDFPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  documentType: 'invoice' | 'quotation' | 'challan';
+  documentType: 'invoice' | 'quotation' | 'challan' | 'taxable-invoice';
   data: any;
 }
 
@@ -30,6 +35,7 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   const gtcQuotationPdfRef = useRef<GTCQuotationPDFRef>(null);
   const rudharmaQuotationPdfRef = useRef<RudharmaQuotationPDFRef>(null);
   const challanPdfRef = useRef<ChallanPDFRef>(null);
+  const taxableInvoicePdfRef = useRef<TaxableInvoicePDFRef>(null);
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -84,6 +90,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
         }
       } else if (documentType === 'challan' && challanPdfRef.current) {
         await challanPdfRef.current.downloadPDF();
+      } else if (documentType === 'taxable-invoice' && taxableInvoicePdfRef.current) {
+        await taxableInvoicePdfRef.current.downloadPDF();
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);
@@ -103,7 +111,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             {documentType === 'invoice' ? 'Performa Invoice Preview' :
-             documentType === 'quotation' ? 'Quotation Preview' : 'Challan Preview'}
+             documentType === 'quotation' ? 'Quotation Preview' :
+             documentType === 'taxable-invoice' ? 'Taxable Invoice Preview' : 'Challan Preview'}
           </h2>
           <button
             onClick={onClose}
@@ -132,6 +141,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
                   return <QuotationPDF ref={quotationPdfRef} quotation={data} />;
                 }
               })()
+            ) : documentType === 'taxable-invoice' ? (
+              <TaxableInvoicePDF ref={taxableInvoicePdfRef} {...data} />
             ) : (
               <ChallanPDF ref={challanPdfRef} challan={data} />
             )}

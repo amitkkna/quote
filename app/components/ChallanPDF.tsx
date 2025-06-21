@@ -216,7 +216,34 @@ const ChallanPDF = forwardRef<ChallanPDFRef, { challan: ChallanData }>(({ challa
 ChallanPDF.displayName = 'ChallanPDF';
 
 // Document component
-const ChallanDocument = ({ challan }: { challan: ChallanData }) => (
+const ChallanDocument = ({ challan }: { challan: ChallanData }) => {
+  // Safety check for challan data
+  if (!challan) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <View style={styles.content}>
+            <Text>Error: Challan data not found</Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  }
+
+  // Additional safety checks for required fields
+  if (!challan.challanNumber && !challan.customerName) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <View style={styles.content}>
+            <Text>Error: Challan data incomplete - missing challan number or customer name</Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  }
+
+  return (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* Header */}
@@ -248,16 +275,16 @@ const ChallanDocument = ({ challan }: { challan: ChallanData }) => (
         <View style={styles.infoSection}>
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Challan Details</Text>
-            <Text style={styles.infoText}>Challan No: {challan.challanNumber}</Text>
-            <Text style={styles.infoText}>Date: {formatDate(challan.date)}</Text>
-            <Text style={styles.infoText}>Delivery Date: {formatDate(challan.deliveryDate)}</Text>
+            <Text style={styles.infoText}>Challan No: {challan.challanNumber || 'N/A'}</Text>
+            <Text style={styles.infoText}>Date: {challan.date ? formatDate(challan.date) : 'N/A'}</Text>
+            <Text style={styles.infoText}>Delivery Date: {challan.deliveryDate ? formatDate(challan.deliveryDate) : 'N/A'}</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Customer Information</Text>
-            <Text style={styles.infoText}>Name: {challan.customerName}</Text>
-            <Text style={styles.infoText}>Address: {challan.customerAddress}</Text>
-            <Text style={styles.infoText}>GST No: {challan.customerEmail}</Text>
-            <Text style={styles.infoText}>Phone: {challan.customerPhone}</Text>
+            <Text style={styles.infoText}>Name: {challan.customerName || 'N/A'}</Text>
+            <Text style={styles.infoText}>Address: {challan.customerAddress || 'N/A'}</Text>
+            <Text style={styles.infoText}>GST No: {challan.customerEmail || 'N/A'}</Text>
+            <Text style={styles.infoText}>Phone: {challan.customerPhone || 'N/A'}</Text>
           </View>
         </View>
 
@@ -268,7 +295,7 @@ const ChallanDocument = ({ challan }: { challan: ChallanData }) => (
             <Text style={styles.serialNo}>S. No.</Text>
             <Text style={styles.description}>Description</Text>
             {/* Dynamic custom columns headers - always before quantity */}
-            {challan.items.length > 0 && Object.keys(challan.items[0])
+            {challan.items && challan.items.length > 0 && Object.keys(challan.items[0])
               .filter(key => !['id', 'serial_no', 'description', 'quantity'].includes(key))
               .map(key => (
               <Text key={key} style={{width: '10%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
@@ -280,7 +307,7 @@ const ChallanDocument = ({ challan }: { challan: ChallanData }) => (
           </View>
 
           {/* Table Rows */}
-          {challan.items.map((item, index) => (
+          {(challan.items || []).map((item, index) => (
             <View key={item.id} style={styles.row}>
               <Text style={styles.serialNo}>{index + 1}</Text>
               <Text style={styles.description}>{item.description}</Text>
@@ -325,11 +352,47 @@ const ChallanDocument = ({ challan }: { challan: ChallanData }) => (
             )}
           </View>
         )}
+
+        {/* Bank Details */}
+        <View style={{
+          marginTop: 20,
+          padding: 10,
+          border: "1 solid #000000",
+          backgroundColor: "#f9f9f9",
+        }}>
+          <Text style={{
+            fontSize: 11,
+            fontWeight: "bold",
+            marginBottom: 5,
+            textAlign: "center",
+          }}>Company's Bank Details</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>A/c Holder's Name: Global Digital Connect</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>Bank Name: HDFC Bank Limited</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>A/c No.: 50200072078516</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>Branch & IFS Code: Telibanda & HDFC0005083</Text>
+        </View>
       </View>
 
       {/* Signature */}
       <View style={styles.signatureSection}>
         <SignatureImage />
+      </View>
+
+      {/* Declaration */}
+      <View style={{
+        position: 'absolute',
+        bottom: 120,
+        left: 30,
+        right: 30,
+      }}>
+        <Text style={{
+          fontSize: 9,
+          lineHeight: 1.3,
+          textAlign: "left",
+          fontStyle: "italic",
+        }}>
+          Declaration: We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+        </Text>
       </View>
 
       {/* Footer */}
@@ -338,6 +401,7 @@ const ChallanDocument = ({ challan }: { challan: ChallanData }) => (
       </View>
     </Page>
   </Document>
-);
+  );
+};
 
 export default ChallanPDF;

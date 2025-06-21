@@ -120,6 +120,19 @@ export default function CreateChallan() {
 
   // Show PDF preview
   const generatePDF = () => {
+    // Validate required fields before opening PDF preview
+    if (!challan.challanNumber || !challan.customerName) {
+      alert('Please fill in the challan number and customer name before generating PDF.');
+      return;
+    }
+
+    // Ensure items array exists and has at least one item
+    if (!challan.items || challan.items.length === 0) {
+      alert('Please add at least one item before generating PDF.');
+      return;
+    }
+
+    console.log('generatePDF: Current challan data:', challan);
     setIsPDFPreviewOpen(true);
   };
 

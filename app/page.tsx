@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 export default function Home() {
@@ -49,29 +47,54 @@ export default function Home() {
                 New Challan
               </Link>
               <Link
-                href="/gtc-quotation"
-                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center shadow-md"
+                href="/taxable-invoice/create"
+                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center shadow-md"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                GTC Quote
-              </Link>
-              <Link
-                href="/rudharma-quotation"
-                className="bg-sky-600 text-white px-6 py-3 rounded-lg hover:bg-sky-700 transition-colors duration-200 flex items-center shadow-md"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                Rudharma Quote
+                New Tax Invoice
               </Link>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+          {/* Taxable Invoices Card */}
+          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center mb-6">
+              <div className="bg-green-100 text-green-600 p-3 rounded-lg mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Taxable Invoices</h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Create GST-compliant taxable invoices with IGST, CGST, and SGST calculations, Bill To/Ship To addresses, and PO references.
+            </p>
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+              <Link
+                href="/taxable-invoice/create"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center justify-center shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Create Taxable Invoice
+              </Link>
+              <Link
+                href="/taxable-invoice/list"
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors duration-200 flex items-center justify-center shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                View All Taxable Invoices
+              </Link>
+            </div>
+          </div>
           {/* Invoices Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 hover:shadow-xl transition-shadow duration-300">
             <div className="flex items-center mb-6">
@@ -188,9 +211,9 @@ export default function Home() {
               <h2 className="text-2xl font-bold text-gray-800">Global Trading Corporation</h2>
             </div>
             <p className="text-gray-600 mb-6">
-              Create quotations for Global Trading Corporation with their specific letterhead and company details.
+              Create quotations, letters, and table documents for Global Trading Corporation with their specific letterhead and company details.
             </p>
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Link
                 href="/gtc-quotation"
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center justify-center shadow-sm"
@@ -199,6 +222,24 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 Create GTC Quote
+              </Link>
+              <Link
+                href="/gtc-letter"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center justify-center shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Create GTC Letter
+              </Link>
+              <Link
+                href="/gtc-table"
+                className="bg-red-400 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors duration-200 flex items-center justify-center shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Create GTC Table
               </Link>
             </div>
           </div>
@@ -267,7 +308,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="bg-white rounded-xl shadow-lg p-6 text-center">
-          <p className="text-gray-600">© 2023 Global Digital Connect. All rights reserved.</p>
+          <p className="text-gray-600">© 2025 Global Digital Connect. All rights reserved.</p>
           <p className="text-gray-500 text-sm mt-1">320, Regus, Magnato Mall, VIP Chowk, Raipur- 492006 | Phone: 9685047519 | Email: prateek@globaldigitalconnect.com</p>
         </footer>
       </div>

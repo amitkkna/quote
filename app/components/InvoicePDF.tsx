@@ -314,11 +314,69 @@ const InvoicePDF = forwardRef<InvoicePDFRef, { invoice: InvoiceData }>(({ invoic
           </View>
         )}
 
+        {/* Bank Details */}
+        <View style={{
+          marginTop: 20,
+          padding: 10,
+          border: "1 solid #000000",
+          backgroundColor: "#f9f9f9",
+        }}>
+          <Text style={{
+            fontSize: 11,
+            fontWeight: "bold",
+            marginBottom: 5,
+            textAlign: "center",
+          }}>Company's Bank Details</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>A/c Holder's Name: Global Digital Connect</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>Bank Name: HDFC Bank Limited</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>A/c No.: 50200072078516</Text>
+          <Text style={{ fontSize: 9, marginBottom: 2 }}>Branch & IFS Code: Telibanda & HDFC0005083</Text>
+        </View>
+
+        {/* Declaration */}
+        <View style={{
+          marginTop: 15,
+          padding: 8,
+          border: "1 solid #000000",
+          backgroundColor: "#f5f5f5",
+        }}>
+          <Text style={{
+            fontSize: 10,
+            fontWeight: "bold",
+            marginBottom: 5,
+            textAlign: "center",
+          }}>Declaration</Text>
+          <Text style={{
+            fontSize: 9,
+            lineHeight: 1.4,
+            textAlign: "justify",
+          }}>
+            We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+          </Text>
+        </View>
+
         {/* Signature is positioned absolutely */}
         </View>
 
         {/* Signature */}
         <SignatureImage />
+
+        {/* Declaration */}
+        <View style={{
+          position: 'absolute',
+          bottom: 120,
+          left: 30,
+          right: 30,
+        }}>
+          <Text style={{
+            fontSize: 9,
+            lineHeight: 1.3,
+            textAlign: "left",
+            fontStyle: "italic",
+          }}>
+            Declaration: We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+          </Text>
+        </View>
 
         {/* Letterhead Footer */}
         <Image
