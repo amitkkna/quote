@@ -22,6 +22,7 @@ interface TaxRates {
 }
 
 export default function CreateTaxableInvoice() {
+  const [companyName, setCompanyName] = useState("Global Digital Connect");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [poReference, setPOReference] = useState("");
@@ -74,16 +75,16 @@ export default function CreateTaxableInvoice() {
   };
 
   const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + item.amount, 0);
+    return Math.round(items.reduce((sum, item) => sum + item.amount, 0));
   };
 
   const calculateTaxAmount = () => {
     const subtotal = calculateSubtotal();
     if (taxType === 'igst') {
-      return (subtotal * taxRates.igst) / 100;
+      return Math.round((subtotal * taxRates.igst) / 100);
     } else {
-      const cgstAmount = (subtotal * taxRates.cgst) / 100;
-      const sgstAmount = (subtotal * taxRates.sgst) / 100;
+      const cgstAmount = Math.round((subtotal * taxRates.cgst) / 100);
+      const sgstAmount = Math.round((subtotal * taxRates.sgst) / 100);
       return cgstAmount + sgstAmount;
     }
   };
@@ -101,6 +102,7 @@ export default function CreateTaxableInvoice() {
   };
 
   const invoiceData = {
+    companyName,
     invoiceNumber,
     invoiceDate,
     poReference,
@@ -142,6 +144,53 @@ export default function CreateTaxableInvoice() {
             >
               Back to Home
             </Link>
+          </div>
+        </div>
+
+        {/* Company Selection */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Company Selection</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Company *
+              </label>
+              <select
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="Global Digital Connect">Global Digital Connect</option>
+                <option value="Global Trading Corporation">Global Trading Corporation</option>
+                <option value="Rudharma Enterprises">Rudharma Enterprises</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <div className="text-sm text-gray-600">
+                <p className="font-medium">Selected Company Details:</p>
+                {companyName === "Global Digital Connect" && (
+                  <div className="mt-1">
+                    <p>320, Regus, Magnato Mall, VIP Chowk, Raipur- 492006</p>
+                    <p>Phone: 9685047519</p>
+                    <p>Email: prateek@globaldigitalconnect.com</p>
+                  </div>
+                )}
+                {companyName === "Global Trading Corporation" && (
+                  <div className="mt-1">
+                    <p>G-607 Golchaa Enclave, Amlidih Raipur</p>
+                    <p>GST: 22AOLPK1034M1Z2</p>
+                    <p>Proprietor: Amit Khera</p>
+                  </div>
+                )}
+                {companyName === "Rudharma Enterprises" && (
+                  <div className="mt-1">
+                    <p>133 Metro Green Society, Saddu Raipur</p>
+                    <p>GST: 22APMPR8089K1Z3</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -417,23 +466,23 @@ export default function CreateTaxableInvoice() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">Subtotal:</span>
-              <span className="font-semibold">₹{calculateSubtotal().toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span className="font-semibold">₹{Math.round(calculateSubtotal()).toLocaleString('en-IN')}</span>
             </div>
 
             {taxType === 'igst' ? (
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">IGST ({taxRates.igst}%):</span>
-                <span className="font-semibold">₹{((calculateSubtotal() * taxRates.igst) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="font-semibold">₹{Math.round((calculateSubtotal() * taxRates.igst) / 100).toLocaleString('en-IN')}</span>
               </div>
             ) : (
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">CGST ({taxRates.cgst}%):</span>
-                  <span className="font-semibold">₹{((calculateSubtotal() * taxRates.cgst) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="font-semibold">₹{Math.round((calculateSubtotal() * taxRates.cgst) / 100).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">SGST ({taxRates.sgst}%):</span>
-                  <span className="font-semibold">₹{((calculateSubtotal() * taxRates.sgst) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="font-semibold">₹{Math.round((calculateSubtotal() * taxRates.sgst) / 100).toLocaleString('en-IN')}</span>
                 </div>
               </>
             )}
@@ -441,7 +490,7 @@ export default function CreateTaxableInvoice() {
             <div className="border-t pt-3">
               <div className="flex justify-between items-center text-lg font-bold">
                 <span className="text-gray-900">Total Amount:</span>
-                <span className="text-blue-600">₹{calculateTotal().toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span className="text-blue-600">₹{Math.round(calculateTotal()).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>

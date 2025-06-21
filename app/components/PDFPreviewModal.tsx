@@ -3,13 +3,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamic imports for all PDF components to avoid SSR issues
-const InvoicePDF = dynamic(() => import('./InvoicePDF'), { ssr: false });
-const QuotationPDF = dynamic(() => import('./QuotationPDF'), { ssr: false });
-const GTCQuotationPDF = dynamic(() => import('./GTCQuotationPDF'), { ssr: false });
-const RudharmaQuotationPDF = dynamic(() => import('./RudharmaQuotationPDF'), { ssr: false });
-const ChallanPDF = dynamic(() => import('./ChallanPDF'), { ssr: false });
-const TaxableInvoicePDF = dynamic(() => import('./TaxableInvoicePDF'), { ssr: false });
+// Import PDF components directly (they already have ClientOnlyPDFViewer wrapper)
+import InvoicePDF from './InvoicePDF';
+import QuotationPDF from './QuotationPDF';
+import GTCQuotationPDF from './GTCQuotationPDF';
+import RudharmaQuotationPDF from './RudharmaQuotationPDF';
+import ChallanPDF from './ChallanPDF';
+import TaxableInvoicePDF from './TaxableInvoicePDF';
+import GTCTaxableInvoicePDF from './GTCTaxableInvoicePDF';
+import RudharmaTaxableInvoicePDF from './RudharmaTaxableInvoicePDF';
 
 interface ChallanPDFRef {
   downloadPDF: () => Promise<void>;
@@ -33,12 +35,14 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   data
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const invoicePdfRef = useRef<any>(null);
-  const quotationPdfRef = useRef<any>(null);
-  const gtcQuotationPdfRef = useRef<any>(null);
-  const rudharmaQuotationPdfRef = useRef<any>(null);
-  const challanPdfRef = useRef<any>(null);
-  const taxableInvoicePdfRef = useRef<any>(null);
+  const invoicePdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const quotationPdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const gtcQuotationPdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const rudharmaQuotationPdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const challanPdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const taxableInvoicePdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const gtcTaxableInvoicePdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
+  const rudharmaTaxableInvoicePdfRef = useRef<{ downloadPDF: () => Promise<void> }>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -84,22 +88,55 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   // Handle download button click
   const handleDownload = async () => {
     try {
+      console.log('Download clicked for document type:', documentType);
+      console.log('Data:', data);
+
       if (documentType === 'invoice' && invoicePdfRef.current) {
+        console.log('Downloading invoice PDF');
         await invoicePdfRef.current.downloadPDF();
       } else if (documentType === 'quotation') {
         // Determine which quotation PDF to use based on company
         const companyName = data.companyName || '';
+        console.log('Quotation company:', companyName);
         if (companyName.includes('Global Trading Corporation') && gtcQuotationPdfRef.current) {
+          console.log('Downloading GTC quotation PDF');
           await gtcQuotationPdfRef.current.downloadPDF();
         } else if (companyName.includes('Rudharma') && rudharmaQuotationPdfRef.current) {
+          console.log('Downloading Rudharma quotation PDF');
           await rudharmaQuotationPdfRef.current.downloadPDF();
         } else if (quotationPdfRef.current) {
+          console.log('Downloading standard quotation PDF');
           await quotationPdfRef.current.downloadPDF();
         }
       } else if (documentType === 'challan' && challanPdfRef.current) {
+        console.log('Downloading challan PDF');
         await challanPdfRef.current.downloadPDF();
-      } else if (documentType === 'taxable-invoice' && taxableInvoicePdfRef.current) {
-        await taxableInvoicePdfRef.current.downloadPDF();
+      } else if (documentType === 'taxable-invoice') {
+        // Determine which taxable invoice PDF to use based on company
+        const companyName = data.companyName || '';
+        console.log('Taxable invoice company:', companyName);
+        console.log('Available refs:', {
+          gtc: !!gtcTaxableInvoicePdfRef.current,
+          rudharma: !!rudharmaTaxableInvoicePdfRef.current,
+          standard: !!taxableInvoicePdfRef.current
+        });
+
+        if (companyName.includes('Global Trading Corporation') && gtcTaxableInvoicePdfRef.current) {
+          console.log('Downloading GTC taxable invoice PDF');
+          await gtcTaxableInvoicePdfRef.current.downloadPDF();
+        } else if (companyName.includes('Rudharma') && rudharmaTaxableInvoicePdfRef.current) {
+          console.log('Downloading Rudharma taxable invoice PDF');
+          await rudharmaTaxableInvoicePdfRef.current.downloadPDF();
+        } else if (taxableInvoicePdfRef.current) {
+          console.log('Downloading standard taxable invoice PDF');
+          await taxableInvoicePdfRef.current.downloadPDF();
+        } else {
+          console.log('No valid PDF ref found for taxable invoice');
+          alert('PDF component not ready. Please wait a moment and try again.');
+        }
+      } else {
+        console.log('No matching document type or ref found');
+        alert('PDF component not ready. Please wait a moment and try again.');
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);
@@ -157,7 +194,17 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
                 }
               })()
             ) : documentType === 'taxable-invoice' ? (
-              <TaxableInvoicePDF ref={taxableInvoicePdfRef} {...data} />
+              // Render appropriate taxable invoice PDF based on company
+              (() => {
+                const companyName = data.companyName || '';
+                if (companyName.includes('Global Trading Corporation')) {
+                  return <GTCTaxableInvoicePDF ref={gtcTaxableInvoicePdfRef} {...data} />;
+                } else if (companyName.includes('Rudharma')) {
+                  return <RudharmaTaxableInvoicePDF ref={rudharmaTaxableInvoicePdfRef} {...data} />;
+                } else {
+                  return <TaxableInvoicePDF ref={taxableInvoicePdfRef} {...data} />;
+                }
+              })()
             ) : (
               <ChallanPDF ref={challanPdfRef} challan={data} />
             )}

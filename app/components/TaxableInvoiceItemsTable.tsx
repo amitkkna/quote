@@ -65,7 +65,7 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
 
   // Calculate amount based on quantity and taxable value
   const calculateAmount = (quantity: number, rate: number): number => {
-    return quantity * rate;
+    return Math.round(quantity * rate);
   };
 
   // Update parent component when items change
@@ -345,7 +345,7 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
                     ) : column.id === "amount" ? (
                       // Amount (read-only, calculated)
                       <div className="text-right font-medium text-gray-900 bg-gray-50 p-2 rounded border">
-                        ₹{(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
                     ) : (
                       // Text input for other fields (including HSN/SAC code)

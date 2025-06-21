@@ -1,10 +1,10 @@
 /**
- * Format a number with Indian style comma separators (e.g., 25,000.00)
+ * Format a number with Indian style comma separators (e.g., 25,000)
  * @param num The number to format
- * @param decimals Number of decimal places (default: 2)
+ * @param decimals Number of decimal places (default: 0)
  * @returns Formatted string with Indian style comma separators
  */
-export const formatIndianNumber = (num: number | string | undefined | null, decimals: number = 2): string => {
+export const formatIndianNumber = (num: number | string | undefined | null, decimals: number = 0): string => {
   // Handle undefined, null, or empty string
   if (num === undefined || num === null || num === "") {
     return "";
@@ -56,9 +56,9 @@ export const formatIndianNumber = (num: number | string | undefined | null, deci
 /**
  * Format a number as currency with Indian style comma separators
  * @param num The number to format
- * @param decimals Number of decimal places (default: 2)
- * @returns Formatted currency string (e.g., "25,000.00")
+ * @param decimals Number of decimal places (default: 0 for whole numbers)
+ * @returns Formatted currency string (e.g., "25,000")
  */
-export const formatCurrency = (num: number | string | undefined | null, decimals: number = 2): string => {
+export const formatCurrency = (num: number | string | undefined | null, decimals: number = 0): string => {
   return formatIndianNumber(num, decimals);
 };
