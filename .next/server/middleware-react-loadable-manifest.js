@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app\\\\invoice\\\\create\\\\page.tsx -> ../../components/PDFPreviewModal\":{\"id\":\"app\\\\invoice\\\\create\\\\page.tsx -> ../../components/PDFPreviewModal\",\"files\":[\"static/chunks/_app-pages-browser_app_components_PDFPreviewModal_tsx.js\"]}}"

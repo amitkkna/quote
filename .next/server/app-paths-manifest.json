@@ -1,5 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/invoice/create/page": "app/invoice/create/page.js",
-  "/taxable-invoice/create/page": "app/taxable-invoice/create/page.js"
-}
