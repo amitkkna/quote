@@ -3,6 +3,7 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, Image, pdf } from '@react-pdf/renderer';
 import { formatDate } from '../utils/dateFormatter';
+import { GTC_SIGNATURE_IMAGE } from '../utils/letterheadImages';
 import SignatureImage from './SignatureImage';
 import { formatIndianNumber } from '../utils/numberFormatter';
 import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
@@ -247,7 +248,7 @@ const GTCQuotationPDF = forwardRef<GTCQuotationPDFRef, { quotation: QuotationDat
   const companyEmail = quotation.companyEmail || "mail.gtcglobal@gmail.com";
   const headerImage = quotation.headerImage || "/gtc-header.jpg";
   const footerImage = quotation.footerImage || "/gtc-footer.jpg";
-  const signatureImage = quotation.signatureImage || "/gtc-signature.jpg";
+  const signatureImage = quotation.signatureImage || GTC_SIGNATURE_IMAGE;
 
   const QuotationDocument = (
     <Document>

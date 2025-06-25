@@ -47,15 +47,24 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   // State to track if components are loaded
   const [componentsLoaded, setComponentsLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [pdfComponentMounted, setPdfComponentMounted] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    // Add a delay to ensure dynamic components are loaded
-    const timer = setTimeout(() => {
-      setComponentsLoaded(true);
-    }, 2000);
-    return () => clearTimeout(timer);
   }, []);
+
+  // Simple loading approach - wait for components to load
+  useEffect(() => {
+    if (isClient && isOpen) {
+      // Give components time to mount and set refs
+      const timer = setTimeout(() => {
+        setComponentsLoaded(true);
+        setPdfComponentMounted(true);
+      }, 3000); // 3 second delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [isClient, isOpen]);
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -95,10 +104,9 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
 
   // Handle download button click
   const handleDownload = async () => {
-    if (!componentsLoaded) {
-      alert('PDF components are still loading. Please wait a moment and try again.');
-      return;
-    }
+    console.log('Download button clicked');
+    console.log('Components loaded:', componentsLoaded);
+    console.log('PDF component mounted:', pdfComponentMounted);
 
     try {
       console.log('Download clicked for document type:', documentType);
@@ -122,7 +130,28 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
           await rudharmaQuotationPdfRef.current.downloadPDF();
         } else if (quotationPdfRef.current?.downloadPDF) {
           console.log('Downloading standard quotation PDF');
+          console.log('Quotation PDF ref exists:', !!quotationPdfRef.current);
           await quotationPdfRef.current.downloadPDF();
+        } else {
+          console.log('No quotation PDF ref found, trying anyway...');
+          console.log('Available refs:', {
+            quotation: !!quotationPdfRef.current,
+            gtc: !!gtcQuotationPdfRef.current,
+            rudharma: !!rudharmaQuotationPdfRef.current
+          });
+
+          // Try to call download anyway - sometimes the ref exists but the check fails
+          try {
+            if (quotationPdfRef.current?.downloadPDF) {
+              console.log('Found quotation ref on retry, downloading...');
+              await quotationPdfRef.current.downloadPDF();
+            } else {
+              alert('PDF component not ready. Please wait a moment and try again.');
+            }
+          } catch (error) {
+            console.error('Error in fallback download:', error);
+            alert('PDF component not ready. Please wait a moment and try again.');
+          }
         }
       } else if (documentType === 'challan' && challanPdfRef.current?.downloadPDF) {
         console.log('Downloading challan PDF');

@@ -3,7 +3,7 @@
 import React, { forwardRef, useImperativeHandle } from "react";
 import { Document, Page, Text, View, StyleSheet, Image, PDFViewer, pdf } from "@react-pdf/renderer";
 import { formatDate } from "../utils/dateFormatter";
-import { formatCurrency } from "../utils/numberFormatter";
+import { formatCurrency, formatRate } from "../utils/numberFormatter";
 import { numberToWords } from "../utils/numberToWords";
 import { getGTCSignatureImage, getSealImage } from "../utils/letterheadImages";
 import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
@@ -325,7 +325,7 @@ const GTCTaxableInvoiceDocument = (props: GTCTaxableInvoicePDFProps) => {
               <Text style={styles.descriptionCol}>{item.description}</Text>
               <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
               <Text style={styles.quantityCol}>{item.quantity || "1"}</Text>
-              <Text style={styles.rateCol}>{formatCurrency(item.rate || item.amount || 0)}</Text>
+              <Text style={styles.rateCol}>{formatRate(item.rate || 0)}</Text>
               <Text style={styles.amountCol}>{formatCurrency(item.amount || 0)}</Text>
             </View>
           ))}

@@ -2,9 +2,9 @@
 
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, Image, pdf } from '@react-pdf/renderer';
-import { HEADER_IMAGE_FALLBACK, FOOTER_IMAGE_FALLBACK } from '../utils/letterheadImages';
+import { HEADER_IMAGE_FALLBACK, FOOTER_IMAGE_FALLBACK, SIGNATURE_IMAGE } from '../utils/letterheadImages';
 import { formatDate } from '../utils/dateFormatter';
-import SignatureImage from './SignatureImage';
+
 import { formatIndianNumber } from '../utils/numberFormatter';
 import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
 
@@ -23,6 +23,7 @@ interface QuotationData {
   customerAddress: string;
   customerEmail: string;
   customerPhone: string;
+  forOption?: string; // New field for "For" option
   items: QuotationItem[];
   notes: string;
   terms: string;
@@ -31,6 +32,7 @@ interface QuotationData {
   gstAmount: number;
   total: number;
   amountInWords: string;
+  fitInOnePage?: boolean; // New field for one page option
   // Company-specific fields
   companyName?: string;
   companyAddress?: string;
@@ -52,8 +54,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 30,
-    paddingTop: 150, // Space for the header - adjusted for the actual header image
-    paddingBottom: 150, // Space for the footer - adjusted for the actual footer image
+    paddingTop: 150,
+    paddingBottom: 180,
     flexGrow: 1,
     position: 'relative',
     zIndex: 2,
@@ -74,144 +76,190 @@ const styles = StyleSheet.create({
     height: 'auto',
     zIndex: 1,
   },
-  section: {
-    margin: 10,
-    padding: 10,
-  },
-  header: {
-    fontSize: 18,
-    marginBottom: 15,
+  // New quotation title
+  quotationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     textAlign: 'center',
-    color: '#333',
-    fontWeight: 'bold',
+    marginBottom: 15,
+    textDecoration: 'underline',
   },
-  subheader: {
-    fontSize: 12,
-    marginBottom: 6,
-    color: '#555',
+  // Customer and quotation info section
+  infoSection: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#000',
+    borderStyle: 'solid',
+  },
+  customerInfo: {
+    width: '50%',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    borderRightStyle: 'solid',
+    padding: 8,
+    justifyContent: 'flex-start',
+  },
+  quotationInfo: {
+    width: '50%',
+    padding: 8,
+    justifyContent: 'flex-start',
+  },
+  infoLabel: {
+    fontSize: 10,
     fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 10,
+    marginBottom: 4,
   },
   customerName: {
     fontSize: 10,
-    marginBottom: 2,
     fontWeight: 'bold',
+    marginBottom: 2,
   },
-  row: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-    borderBottomStyle: 'solid',
-    alignItems: 'flex-start',
-    minHeight: 28,
-    fontSize: 10,
-    fontWeight: 'normal',
-    padding: '8px 0',
+  // Table styles
+  tableContainer: {
+    marginBottom: 20,
+    width: '100%',
   },
-  serialNo: {
-    width: '10%',
-    paddingRight: 8,
-    textAlign: 'center',
-    whiteSpace: 'normal',
-  },
-  description: {
-    width: '40%',
-    paddingRight: 8,
-    textOverflow: 'ellipsis',
-    whiteSpace: 'normal',
-  },
-  amount: {
-    width: '35%',
-    textAlign: 'right',
-    fontFamily: 'Helvetica-Bold',
-    fontVariant: 'normal',
-    paddingRight: 0,
-    marginRight: 0,
+  table: {
+    borderWidth: 1,
+    borderColor: '#000',
+    borderStyle: 'solid',
+    width: '100%',
   },
   tableHeader: {
     flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
     borderBottomWidth: 1,
-    borderBottomColor: '#000000',
+    borderBottomColor: '#000',
     borderBottomStyle: 'solid',
+    minHeight: 25,
+  },
+  tableHeaderCell: {
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    borderRightStyle: 'solid',
+    padding: 3,
+    minHeight: 25,
+    justifyContent: 'center',
     alignItems: 'center',
-    height: 30,
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginTop: 15,
-    backgroundColor: '#f5f5f5',
-    padding: '4px 0',
+    flexDirection: 'column',
+    overflow: 'hidden',
   },
-  tableFooter: {
+  tableRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
-    borderTopStyle: 'solid',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    borderBottomStyle: 'solid',
+    minHeight: 25,
+  },
+  tableCell: {
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    borderRightStyle: 'solid',
+    padding: 3,
+    minHeight: 25,
+    justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    wordWrap: 'break-word',
   },
-  detailsContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
+  slColumn: {
+    width: '8%',
+    minWidth: '8%',
+    maxWidth: '8%',
+    textAlign: 'center',
   },
-  detailsLeft: {
-    width: '50%',
+  particularsColumn: {
+    width: '62%',
+    minWidth: '62%',
+    maxWidth: '62%',
+    textAlign: 'left',
   },
-  detailsRight: {
-    width: '50%',
+  unitsColumn: {
+    width: '15%',
+    minWidth: '15%',
+    maxWidth: '15%',
+    textAlign: 'center',
+  },
+  amountColumn: {
+    width: '15%',
+    minWidth: '15%',
+    maxWidth: '15%',
+    textAlign: 'right',
+  },
+  // Total section
+  totalSection: {
+    marginBottom: 15,
   },
   totalRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
-    borderTopStyle: 'solid',
-    alignItems: 'center',
-    height: 30,
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginTop: 4,
-    backgroundColor: '#f9f9f9',
-    padding: '4px 0',
+    justifyContent: 'flex-end',
+    marginBottom: 3,
   },
-  totalAmount: {
-    width: '15%',
-    textAlign: 'right',
-    fontSize: 12,
+  totalLabel: {
+    fontSize: 10,
     fontWeight: 'bold',
-    fontFamily: 'Helvetica',
-    fontVariant: 'normal',
+    width: 120,
+    textAlign: 'right',
+    marginRight: 10,
+  },
+  totalValue: {
+    fontSize: 10,
+    width: 80,
+    textAlign: 'right',
+  },
+  // Amount in words section
+  amountInWordsSection: {
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 8,
+  },
+  amountInWordsLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 3,
   },
   amountInWords: {
-    marginTop: 10,
-    fontSize: 11,
-    fontStyle: 'italic',
-    color: '#333',
-  },
-  notes: {
-    marginTop: 20,
     fontSize: 10,
-    color: '#333',
-  },
-  terms: {
-    marginTop: 20,
-    fontSize: 10,
-    color: '#333',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 30,
-    right: 30,
-    fontSize: 10,
-    textAlign: 'center',
-    color: '#666',
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
-    borderTopStyle: 'solid',
-    paddingTop: 10,
-  },
-  validUntil: {
-    marginTop: 10,
-    fontSize: 12,
-    color: '#333',
     fontWeight: 'bold',
+  },
+  // Terms and conditions
+  termsSection: {
+    marginTop: 20,
+  },
+  termsTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  termsList: {
+    fontSize: 9,
+    lineHeight: 1.4,
+  },
+  // Signature section
+  signatureSection: {
+    alignItems: 'flex-end',
+    paddingRight: 30,
+    position: 'relative',
+    width: '100%',
+    flexDirection: 'column',
+  },
+  signatureImage: {
+    width: 40,  // 50% of original 80px
+    height: 20, // 50% of original 40px
+    marginTop: 5,
+    marginRight: 0,
+  },
+  signatureText: {
+    fontSize: 9,
+    textAlign: 'center',
+    marginBottom: 2,
   },
 });
 
@@ -229,178 +277,351 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
   const companyEmail = quotation.companyEmail || "prateek@globaldigitalconnect.com";
   const headerImage = quotation.headerImage || HEADER_IMAGE_FALLBACK;
   const footerImage = quotation.footerImage || FOOTER_IMAGE_FALLBACK;
-  const signatureImage = quotation.signatureImage || "/signature.jpg";
+  const signatureImage = quotation.signatureImage || SIGNATURE_IMAGE;
+
+  // Calculate dynamic column widths based on number of custom columns
+  const getColumnWidths = () => {
+    const customColumns = quotation.items[0] ?
+      Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k)) : [];
+
+    const numCustomColumns = Math.max(customColumns.length, 1); // At least 1 for default Units column
+
+    // Fixed widths for consistent layout
+    const slWidth = 6; // Reduced SL column
+    const amountWidth = 15; // Reduced Amount column
+
+    // Calculate available width for particulars and custom columns
+    const availableWidth = 100 - slWidth - amountWidth; // 79%
+
+    // Distribute width more evenly
+    let particularsWidth, customColumnWidth;
+
+    if (numCustomColumns === 1) {
+      particularsWidth = 64; // 64%
+      customColumnWidth = 15; // 15%
+    } else if (numCustomColumns === 2) {
+      particularsWidth = 55; // 55%
+      customColumnWidth = 12; // 12% each (24% total)
+    } else if (numCustomColumns === 3) {
+      particularsWidth = 49; // 49%
+      customColumnWidth = 10; // 10% each (30% total)
+    } else if (numCustomColumns === 4) {
+      particularsWidth = 43; // 43%
+      customColumnWidth = 9; // 9% each (36% total)
+    } else {
+      // For 5+ columns, distribute evenly
+      particularsWidth = 35; // 35%
+      customColumnWidth = Math.floor(44 / numCustomColumns); // Distribute remaining 44%
+    }
+
+    return {
+      slColumn: `${slWidth}%`,
+      particularsColumn: `${particularsWidth}%`,
+      customColumn: `${customColumnWidth}%`,
+      amountColumn: `${amountWidth}%`
+    };
+  };
+
+  const columnWidths = getColumnWidths();
+
+  // Dynamic styles based on fitInOnePage option
+  const getDynamicStyles = () => {
+    const isCompact = quotation.fitInOnePage;
+
+    return {
+      contentPadding: isCompact ? 20 : 30,
+      contentPaddingTop: isCompact ? 130 : 120, // Increased to prevent header overlap
+      contentPaddingBottom: isCompact ? 80 : 180, // Reduced to fit more content
+      headerFontSize: isCompact ? 16 : 18, // Slightly smaller header font
+      infoFontSize: isCompact ? 8 : 9,
+      tableFontSize: isCompact ? 8 : 9, // More readable table font
+      tableHeaderFontSize: isCompact ? 9 : 10, // More readable header font
+      tableMinHeight: isCompact ? 20 : 25, // Slightly smaller row height
+      amountWordsMargin: isCompact ? 5 : 15, // Reduced margin to save space
+      signatureMargin: isCompact ? 25 : 50, // Adequate signature margin to prevent overlap
+      quotationTitleMargin: isCompact ? 10 : 15, // Smaller title margin
+      infoSectionMargin: isCompact ? 10 : 15, // Smaller info margin
+    };
+  };
+
+  const dynamicStyles = getDynamicStyles();
 
   // Create a document that can be used for both viewing and downloading
   const QuotationDocument = (
     <Document>
       <Page size="A4" style={styles.page}>
-          {/* Letterhead Header */}
-          <Image
-            src={headerImage}
-            style={styles.headerImage}
-          />
+        {/* Letterhead Header */}
+        <Image
+          src={headerImage}
+          style={styles.headerImage}
+        />
 
-        <View style={styles.contentContainer}>
-          <Text style={styles.header}>QUOTATION</Text>
+        <View style={[styles.contentContainer, {
+          padding: dynamicStyles.contentPadding,
+          paddingTop: dynamicStyles.contentPaddingTop,
+          paddingBottom: dynamicStyles.contentPaddingBottom,
+        }]}>
+          {/* Quotation Title */}
+          <Text style={[styles.quotationTitle, {fontSize: dynamicStyles.headerFontSize, marginBottom: dynamicStyles.quotationTitleMargin}]}>QUOTATION</Text>
 
-          {/* Quotation Details */}
-          <View style={styles.detailsContainer}>
-            <View style={styles.detailsLeft}>
-              <Text style={{...styles.subheader, fontSize: 11, marginBottom: 4}}>From:</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>{companyName}</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>{companyAddress}</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>Phone: {companyPhone}</Text>
-              <Text style={{fontSize: 10}}>Email: {companyEmail}</Text>
-              {quotation.companyGST && (
-                <Text style={{fontSize: 10, marginTop: 2}}>GST: {quotation.companyGST}</Text>
+          {/* Customer and Quotation Info Section */}
+          <View style={[styles.infoSection, {marginBottom: dynamicStyles.infoSectionMargin}]}>
+            <View style={styles.customerInfo}>
+              <Text style={styles.infoLabel}>Customer Name: <Text style={styles.customerName}>{quotation.customerName}</Text></Text>
+              <Text style={styles.infoLabel}>Customer Address: <Text style={styles.infoValue}>{quotation.customerAddress}</Text></Text>
+            </View>
+            <View style={styles.quotationInfo}>
+              <Text style={styles.infoLabel}>Quotation No.: <Text style={styles.infoValue}>{quotation.quotationNumber}</Text></Text>
+              <Text style={styles.infoLabel}>Date: <Text style={styles.infoValue}>{formatDate(quotation.date)}</Text></Text>
+              {quotation.forOption && (
+                <Text style={styles.infoLabel}>For: <Text style={styles.infoValue}>{quotation.forOption}</Text></Text>
               )}
             </View>
-            <View style={styles.detailsRight}>
-              <Text style={{...styles.subheader, fontSize: 11, marginBottom: 4}}>To:</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>{quotation.customerName}</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>{quotation.customerAddress}</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>Phone: {quotation.customerPhone}</Text>
-              <Text style={{fontSize: 10}}>GST No.: {quotation.customerEmail}</Text>
+          </View>
+
+          {/* Table Container */}
+          <View style={styles.tableContainer}>
+            <View style={styles.table}>
+            {/* Table Header */}
+            <View style={[styles.tableHeader, {minHeight: dynamicStyles.tableMinHeight}]}>
+              <View style={[styles.tableHeaderCell, {width: columnWidths.slColumn}]}>
+                <Text style={{fontSize: dynamicStyles.tableHeaderFontSize, fontWeight: 'bold', textAlign: 'center'}}>SL</Text>
+              </View>
+              <View style={[styles.tableHeaderCell, {width: columnWidths.particularsColumn, alignItems: 'flex-start'}]}>
+                <Text style={{fontSize: dynamicStyles.tableHeaderFontSize, fontWeight: 'bold', textAlign: 'left'}}>Particulars</Text>
+              </View>
+
+              {/* Render custom column headers or default Units column */}
+              {quotation.items[0] && Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k)).length > 0 ? (
+                // Render custom columns
+                Object.keys(quotation.items[0]).map((key, index) => {
+                  // Skip standard columns
+                  if (["id", "serial_no", "description", "amount"].includes(key)) {
+                    return null;
+                  }
+
+                  return (
+                    <View key={key} style={[styles.tableHeaderCell, {width: columnWidths.customColumn}]}>
+                      <Text style={{fontSize: Math.max(dynamicStyles.tableHeaderFontSize - 1, 8), fontWeight: 'bold', textAlign: 'center', width: '100%'}}>
+                        {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      </Text>
+                    </View>
+                  );
+                })
+              ) : (
+                // Default Units column when no custom columns
+                <View style={[styles.tableHeaderCell, {width: columnWidths.customColumn}]}>
+                  <Text style={{fontSize: dynamicStyles.tableHeaderFontSize, fontWeight: 'bold', textAlign: 'center'}}>Units</Text>
+                </View>
+              )}
+
+              <View style={[styles.tableHeaderCell, {width: columnWidths.amountColumn, borderRightWidth: 0}]}>
+                <Text style={{fontSize: dynamicStyles.tableHeaderFontSize, fontWeight: 'bold', textAlign: 'center'}}>Amount (Rs.)</Text>
+              </View>
+            </View>
+
+            {/* Table Rows */}
+            {quotation.items.map((item, index) => (
+              <View key={item.id} style={[styles.tableRow, {minHeight: dynamicStyles.tableMinHeight}]}>
+                <View style={[styles.tableCell, {width: columnWidths.slColumn}]}>
+                  <Text style={{fontSize: dynamicStyles.tableFontSize, textAlign: 'center'}}>{index + 1}</Text>
+                </View>
+                <View style={[styles.tableCell, {width: columnWidths.particularsColumn, alignItems: 'flex-start'}]}>
+                  <Text style={{fontSize: dynamicStyles.tableFontSize, textAlign: 'left'}}>{item.description}</Text>
+                </View>
+
+                {/* Render custom column values or default Units column */}
+                {Object.keys(item).filter(k => !["id", "serial_no", "description", "amount"].includes(k)).length > 0 ? (
+                  // Render custom columns
+                  Object.keys(item).map((key) => {
+                    // Skip standard columns
+                    if (["id", "serial_no", "description", "amount"].includes(key)) {
+                      return null;
+                    }
+
+                    return (
+                      <View key={key} style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                        <Text style={{fontSize: Math.max(dynamicStyles.tableFontSize - 1, 7), textAlign: 'center', width: '100%'}}>
+                          {item[key] || ""}
+                        </Text>
+                      </View>
+                    );
+                  })
+                ) : (
+                  // Default Units column when no custom columns
+                  <View style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                    <Text style={{fontSize: dynamicStyles.tableFontSize, textAlign: 'center'}}>1</Text>
+                  </View>
+                )}
+
+                <View style={[styles.tableCell, {width: columnWidths.amountColumn, borderRightWidth: 0}]}>
+                  <Text style={{fontSize: dynamicStyles.tableFontSize, textAlign: 'right'}}>
+                    {formatIndianNumber(item.amount)}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Total Without Tax Row */}
+            <View style={[styles.tableRow, {minHeight: dynamicStyles.tableMinHeight}]}>
+              <View style={[styles.tableCell, {width: columnWidths.slColumn}]}></View>
+              <View style={[styles.tableCell, {width: columnWidths.particularsColumn}]}></View>
+
+              {/* Handle custom columns or default Units column */}
+              {quotation.items[0] && Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k)).length > 0 ? (
+                // Custom columns exist
+                Object.keys(quotation.items[0]).map((key, index) => {
+                  if (["id", "serial_no", "description", "amount"].includes(key)) {
+                    return null;
+                  }
+
+                  const customKeys = Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k));
+                  const isLastCustomColumn = key === customKeys[customKeys.length - 1];
+
+                  return (
+                    <View key={key} style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                      {isLastCustomColumn ? (
+                        <Text style={{fontSize: Math.max(dynamicStyles.tableFontSize - 1, 7), fontWeight: 'bold', textAlign: 'center'}}>Total Without Tax</Text>
+                      ) : null}
+                    </View>
+                  );
+                })
+              ) : (
+                // Default Units column
+                <View style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                  <Text style={{fontSize: dynamicStyles.tableFontSize, fontWeight: 'bold', textAlign: 'center'}}>Total Without Tax</Text>
+                </View>
+              )}
+
+              <View style={[styles.tableCell, {width: columnWidths.amountColumn, borderRightWidth: 0}]}>
+                <Text style={{fontSize: 9, fontWeight: 'bold', textAlign: 'right'}}>
+                  {formatIndianNumber(quotation.subtotal)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Tax Row */}
+            <View style={[styles.tableRow, {minHeight: dynamicStyles.tableMinHeight}]}>
+              <View style={[styles.tableCell, {width: columnWidths.slColumn}]}></View>
+              <View style={[styles.tableCell, {width: columnWidths.particularsColumn}]}></View>
+
+              {/* Handle custom columns or default Units column */}
+              {quotation.items[0] && Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k)).length > 0 ? (
+                // Custom columns exist
+                Object.keys(quotation.items[0]).map((key, index) => {
+                  if (["id", "serial_no", "description", "amount"].includes(key)) {
+                    return null;
+                  }
+
+                  const customKeys = Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k));
+                  const isLastCustomColumn = key === customKeys[customKeys.length - 1];
+
+                  return (
+                    <View key={key} style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                      {isLastCustomColumn ? (
+                        <Text style={{fontSize: Math.max(dynamicStyles.tableFontSize - 1, 7), fontWeight: 'bold', textAlign: 'center'}}>Taxes ({quotation.gstRate}%)</Text>
+                      ) : null}
+                    </View>
+                  );
+                })
+              ) : (
+                // Default Units column
+                <View style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                  <Text style={{fontSize: dynamicStyles.tableFontSize, fontWeight: 'bold', textAlign: 'center'}}>Taxes ({quotation.gstRate}%)</Text>
+                </View>
+              )}
+
+              <View style={[styles.tableCell, {width: columnWidths.amountColumn, borderRightWidth: 0}]}>
+                <Text style={{fontSize: 9, fontWeight: 'bold', textAlign: 'right'}}>
+                  {formatIndianNumber(quotation.gstAmount)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Final Total Row */}
+            <View style={[styles.tableRow, {borderBottomWidth: 2, minHeight: dynamicStyles.tableMinHeight}]}>
+              <View style={[styles.tableCell, {width: columnWidths.slColumn}]}></View>
+              <View style={[styles.tableCell, {width: columnWidths.particularsColumn}]}></View>
+
+              {/* Handle custom columns or default Units column */}
+              {quotation.items[0] && Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k)).length > 0 ? (
+                // Custom columns exist
+                Object.keys(quotation.items[0]).map((key, index) => {
+                  if (["id", "serial_no", "description", "amount"].includes(key)) {
+                    return null;
+                  }
+
+                  const customKeys = Object.keys(quotation.items[0]).filter(k => !["id", "serial_no", "description", "amount"].includes(k));
+                  const isLastCustomColumn = key === customKeys[customKeys.length - 1];
+
+                  return (
+                    <View key={key} style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                      {isLastCustomColumn ? (
+                        <Text style={{fontSize: Math.max(dynamicStyles.tableFontSize - 1, 7), fontWeight: 'bold', textAlign: 'center'}}>TOTAL (Rs.)</Text>
+                      ) : null}
+                    </View>
+                  );
+                })
+              ) : (
+                // Default Units column
+                <View style={[styles.tableCell, {width: columnWidths.customColumn}]}>
+                  <Text style={{fontSize: dynamicStyles.tableFontSize, fontWeight: 'bold', textAlign: 'center'}}>TOTAL (Rs.)</Text>
+                </View>
+              )}
+
+              <View style={[styles.tableCell, {width: columnWidths.amountColumn, borderRightWidth: 0}]}>
+                <Text style={{fontSize: 9, fontWeight: 'bold', textAlign: 'right'}}>
+                  {formatIndianNumber(quotation.total)}
+                </Text>
+              </View>
             </View>
           </View>
-
-        <View style={{...styles.detailsContainer, marginTop: 5, marginBottom: 10, borderTop: '1px solid #eee', paddingTop: 8}}>
-          <View style={styles.detailsLeft}>
-            <Text style={{fontSize: 10, marginBottom: 3}}><Text style={{fontWeight: 'bold'}}>Quotation Number:</Text> {quotation.quotationNumber}</Text>
-            <Text style={{fontSize: 10, marginBottom: 3}}><Text style={{fontWeight: 'bold'}}>Date:</Text> {formatDate(quotation.date)}</Text>
-            <Text style={{fontSize: 10, fontWeight: 'bold'}}><Text style={{fontWeight: 'bold'}}>Valid Until:</Text> {formatDate(quotation.validUntil)}</Text>
           </View>
-        </View>
 
-        {/* Table Header */}
-        <View style={styles.tableHeader}>
-          <Text style={styles.serialNo}>S. No.</Text>
-          <Text style={styles.description}>Description</Text>
+          {/* Clear separation after table */}
+          <View style={{height: 20, width: '100%'}}></View>
 
-          {/* Render custom column headers */}
-          {quotation.items[0] && Object.keys(quotation.items[0]).map(key => {
-            // Skip standard columns
-            if (["id", "serial_no", "description", "amount"].includes(key)) {
-              return null;
-            }
-            return (
-              <Text key={key} style={{width: '8%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
-                {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-              </Text>
-            );
-          })}
-
-          <Text style={{...styles.amount, textAlign: 'right'}}>Amount</Text>
-        </View>
-
-        {/* Table Rows */}
-        {quotation.items.map((item) => (
-          <View style={styles.row} key={item.id}>
-            <Text style={styles.serialNo}>{item.serial_no || item.id}</Text>
-            <Text style={styles.description}>{item.description || "-"}</Text>
-
-            {/* Render custom column values */}
-            {Object.keys(item).map(key => {
-              // Skip standard columns
-              if (["id", "serial_no", "description", "amount"].includes(key)) {
-                return null;
-              }
-              return (
-                <Text key={key} style={{width: '8%', paddingRight: 8, fontSize: 9, textOverflow: 'ellipsis', whiteSpace: 'normal'}}>
-                  {item[key] || ""}
-                </Text>
-              );
-            })}
-
-            <Text style={{...styles.amount, textAlign: 'right', fontFeatureSettings: 'tnum'}}>{item.amount ? formatIndianNumber(item.amount) : ""}</Text>
+          {/* Amount in Words */}
+          <View style={[styles.amountInWordsSection, {marginBottom: dynamicStyles.amountWordsMargin}]}>
+            <Text style={styles.amountInWordsLabel}>Amount Chargeable (in words):</Text>
+            <Text style={styles.amountInWords}>{quotation.amountInWords}</Text>
           </View>
-        ))}
 
-        {/* Table Footer - Totals */}
-        <View style={{ marginTop: 20, alignSelf: 'flex-end', width: '35%' }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-            <Text style={{ fontSize: 10, fontWeight: 'bold' }}>Subtotal:</Text>
-            <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum', textAlign: 'right' }}>
-              {quotation.subtotal ? formatIndianNumber(quotation.subtotal) : ""}
+          {/* Terms and Conditions - Only show if user has entered terms */}
+          {quotation.terms && (
+            <View style={styles.termsSection}>
+              <Text style={styles.termsTitle}>Terms and Conditions:</Text>
+              <Text style={styles.termsList}>{quotation.terms}</Text>
+            </View>
+          )}
+
+          {/* Notes - Only show if user has entered notes */}
+          {quotation.notes && (
+            <View style={styles.termsSection}>
+              <Text style={styles.termsTitle}>Notes:</Text>
+              <Text style={styles.termsList}>{quotation.notes}</Text>
+            </View>
+          )}
+
+          {/* Clear separation before signature */}
+          <View style={{height: quotation.fitInOnePage ? 20 : dynamicStyles.signatureMargin, width: '100%', borderBottom: '1px solid transparent'}}></View>
+
+          {/* Signature Section - At the very end */}
+          <View style={[styles.signatureSection, {marginTop: dynamicStyles.signatureMargin}]}>
+            <Text style={[styles.signatureText, {fontSize: quotation.fitInOnePage ? 8 : 9}]}>For Global Digital Connect</Text>
+            <Text style={[styles.signatureText, {fontSize: quotation.fitInOnePage ? 8 : 9}]}>Authorized Signatory</Text>
+            <Image
+              src={signatureImage}
+              style={styles.signatureImage}
+            />
+          </View>
+
+          {/* Computer Generated Quotation Text */}
+          <View style={{marginTop: 20, alignItems: 'center'}}>
+            <Text style={{fontSize: 8, color: '#666', fontStyle: 'italic'}}>
+              This is a Computer Generated Quotation
             </Text>
           </View>
-
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-            <Text style={{ fontSize: 10, fontWeight: 'bold' }}>GST ({quotation.gstRate || 0}%):</Text>
-            <Text style={{ fontSize: 10, fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum', textAlign: 'right' }}>
-              {quotation.gstAmount ? formatIndianNumber(quotation.gstAmount) : ""}
-            </Text>
-          </View>
-
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#000', paddingTop: 5 }}>
-            <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Total:</Text>
-            <Text style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'Helvetica', fontVariant: 'normal', fontFeatureSettings: 'tnum', textAlign: 'right' }}>
-              {quotation.total ? formatIndianNumber(quotation.total) : ""}
-            </Text>
-          </View>
-        </View>
-
-        <View style={{...styles.amountInWords, marginTop: 15, borderTop: '1px dashed #ccc', paddingTop: 8}}>
-          <Text style={{fontSize: 10, fontStyle: 'italic'}}><Text style={{fontWeight: 'bold'}}>Amount in words:</Text> {quotation.amountInWords}</Text>
-        </View>
-
-        {/* Terms */}
-        {quotation.terms && (
-          <View style={{...styles.terms, marginTop: 15}}>
-            <Text style={{fontSize: 11, fontWeight: 'bold', marginBottom: 4}}>Terms & Conditions:</Text>
-            <Text style={{fontSize: 9}}>{quotation.terms}</Text>
-          </View>
-        )}
-
-        {/* Notes */}
-        {quotation.notes && (
-          <View style={{...styles.notes, marginTop: 10}}>
-            <Text style={{fontSize: 11, fontWeight: 'bold', marginBottom: 4}}>Notes:</Text>
-            <Text style={{fontSize: 9}}>{quotation.notes}</Text>
-          </View>
-        )}
-
-        {/* Bank Details */}
-        <View style={{
-          marginTop: 20,
-          padding: 10,
-          border: "1 solid #000000",
-          backgroundColor: "#f9f9f9",
-        }}>
-          <Text style={{
-            fontSize: 11,
-            fontWeight: "bold",
-            marginBottom: 5,
-            textAlign: "center",
-          }}>Company's Bank Details</Text>
-          <Text style={{ fontSize: 9, marginBottom: 2 }}>A/c Holder's Name: Global Digital Connect</Text>
-          <Text style={{ fontSize: 9, marginBottom: 2 }}>Bank Name: HDFC Bank Limited</Text>
-          <Text style={{ fontSize: 9, marginBottom: 2 }}>A/c No.: 50200072078516</Text>
-          <Text style={{ fontSize: 9, marginBottom: 2 }}>Branch & IFS Code: Telibanda & HDFC0005083</Text>
-        </View>
-
-        {/* Signature is positioned absolutely */}
-        </View>
-
-        {/* Signature */}
-        <SignatureImage signatureImage={signatureImage} />
-
-        {/* Declaration */}
-        <View style={{
-          position: 'absolute',
-          bottom: 120,
-          left: 30,
-          right: 30,
-        }}>
-          <Text style={{
-            fontSize: 9,
-            lineHeight: 1.3,
-            textAlign: "left",
-            fontStyle: "italic",
-          }}>
-            Declaration: We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
-          </Text>
         </View>
 
         {/* Letterhead Footer */}
@@ -415,13 +636,24 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
   // Expose the download function to the parent component
   useImperativeHandle(ref, () => ({
     downloadPDF: async () => {
-      const blob = await pdf(QuotationDocument).toBlob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Quotation-${quotation.quotationNumber}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
+      try {
+        console.log('Starting PDF generation for quotation:', quotation.quotationNumber);
+        const blob = await pdf(QuotationDocument).toBlob();
+        console.log('PDF blob generated successfully, size:', blob.size);
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Quotation-${quotation.quotationNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        console.log('PDF download initiated successfully');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please check the console for details.');
+      }
     }
   }));
 

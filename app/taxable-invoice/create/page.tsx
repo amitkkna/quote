@@ -53,6 +53,7 @@ export default function CreateTaxableInvoice() {
 
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [fitToOnePage, setFitToOnePage] = useState(false);
+  const [roundOff, setRoundOff] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   const handleSameAsBillToChange = (checked: boolean) => {
@@ -74,22 +75,48 @@ export default function CreateTaxableInvoice() {
   };
 
   const calculateSubtotal = () => {
-    return Math.round(items.reduce((sum, item) => sum + item.amount, 0));
+    // Calculate precise subtotal with decimals
+    const preciseSubtotal = items.reduce((sum, item) => sum + item.amount, 0);
+    return roundOff ? Math.round(preciseSubtotal) : Math.round(preciseSubtotal * 100) / 100;
   };
 
   const calculateTaxAmount = () => {
-    const subtotal = calculateSubtotal();
+    // Use precise subtotal for tax calculations
+    const preciseSubtotal = items.reduce((sum, item) => sum + item.amount, 0);
     if (taxType === 'igst') {
-      return Math.round((subtotal * taxRates.igst) / 100);
+      const igstAmount = (preciseSubtotal * taxRates.igst) / 100;
+      return roundOff ? Math.round(igstAmount) : Math.round(igstAmount * 100) / 100;
     } else {
-      const cgstAmount = Math.round((subtotal * taxRates.cgst) / 100);
-      const sgstAmount = Math.round((subtotal * taxRates.sgst) / 100);
-      return cgstAmount + sgstAmount;
+      const cgstAmount = (preciseSubtotal * taxRates.cgst) / 100;
+      const sgstAmount = (preciseSubtotal * taxRates.sgst) / 100;
+      const totalTax = cgstAmount + sgstAmount;
+      return roundOff ? Math.round(totalTax) : Math.round(totalTax * 100) / 100;
     }
   };
 
+  const calculateCGSTAmount = () => {
+    const preciseSubtotal = items.reduce((sum, item) => sum + item.amount, 0);
+    const cgstAmount = (preciseSubtotal * taxRates.cgst) / 100;
+    return roundOff ? Math.round(cgstAmount) : Math.round(cgstAmount * 100) / 100;
+  };
+
+  const calculateSGSTAmount = () => {
+    const preciseSubtotal = items.reduce((sum, item) => sum + item.amount, 0);
+    const sgstAmount = (preciseSubtotal * taxRates.sgst) / 100;
+    return roundOff ? Math.round(sgstAmount) : Math.round(sgstAmount * 100) / 100;
+  };
+
+  const calculateIGSTAmount = () => {
+    const preciseSubtotal = items.reduce((sum, item) => sum + item.amount, 0);
+    const igstAmount = (preciseSubtotal * taxRates.igst) / 100;
+    return roundOff ? Math.round(igstAmount) : Math.round(igstAmount * 100) / 100;
+  };
+
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateTaxAmount();
+    const subtotal = calculateSubtotal();
+    const taxAmount = calculateTaxAmount();
+    const total = subtotal + taxAmount;
+    return roundOff ? Math.round(total) : Math.round(total * 100) / 100;
   };
 
   const handlePreview = () => {
@@ -122,9 +149,13 @@ export default function CreateTaxableInvoice() {
     taxType,
     subtotal: calculateSubtotal(),
     taxAmount: calculateTaxAmount(),
+    cgstAmount: calculateCGSTAmount(),
+    sgstAmount: calculateSGSTAmount(),
+    igstAmount: calculateIGSTAmount(),
     total: calculateTotal(),
     termsAndConditions,
-    fitToOnePage
+    fitToOnePage,
+    roundOff
   };
 
   return (
@@ -457,6 +488,29 @@ export default function CreateTaxableInvoice() {
               </>
             )}
           </div>
+
+          {/* Round Off Option */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Round Off
+                </label>
+                <p className="text-xs text-gray-500">
+                  Round amounts to whole numbers (0 decimal places)
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={roundOff}
+                  onChange={(e) => setRoundOff(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Calculation Summary */}
@@ -465,23 +519,35 @@ export default function CreateTaxableInvoice() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">Subtotal:</span>
-              <span className="font-semibold">₹{Math.round(calculateSubtotal()).toLocaleString('en-IN')}</span>
+              <span className="font-semibold">₹{calculateSubtotal().toLocaleString('en-IN', {
+                minimumFractionDigits: roundOff ? 0 : 2,
+                maximumFractionDigits: roundOff ? 0 : 2
+              })}</span>
             </div>
 
             {taxType === 'igst' ? (
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">IGST ({taxRates.igst}%):</span>
-                <span className="font-semibold">₹{Math.round((calculateSubtotal() * taxRates.igst) / 100).toLocaleString('en-IN')}</span>
+                <span className="font-semibold">₹{calculateIGSTAmount().toLocaleString('en-IN', {
+                  minimumFractionDigits: roundOff ? 0 : 2,
+                  maximumFractionDigits: roundOff ? 0 : 2
+                })}</span>
               </div>
             ) : (
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">CGST ({taxRates.cgst}%):</span>
-                  <span className="font-semibold">₹{Math.round((calculateSubtotal() * taxRates.cgst) / 100).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold">₹{calculateCGSTAmount().toLocaleString('en-IN', {
+                    minimumFractionDigits: roundOff ? 0 : 2,
+                    maximumFractionDigits: roundOff ? 0 : 2
+                  })}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">SGST ({taxRates.sgst}%):</span>
-                  <span className="font-semibold">₹{Math.round((calculateSubtotal() * taxRates.sgst) / 100).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold">₹{calculateSGSTAmount().toLocaleString('en-IN', {
+                    minimumFractionDigits: roundOff ? 0 : 2,
+                    maximumFractionDigits: roundOff ? 0 : 2
+                  })}</span>
                 </div>
               </>
             )}
@@ -489,7 +555,10 @@ export default function CreateTaxableInvoice() {
             <div className="border-t pt-3">
               <div className="flex justify-between items-center text-lg font-bold">
                 <span className="text-gray-900">Total Amount:</span>
-                <span className="text-blue-600">₹{Math.round(calculateTotal()).toLocaleString('en-IN')}</span>
+                <span className="text-blue-600">₹{calculateTotal().toLocaleString('en-IN', {
+                  minimumFractionDigits: roundOff ? 0 : 2,
+                  maximumFractionDigits: roundOff ? 0 : 2
+                })}</span>
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import DynamicItemsTable from "../../components/DynamicItemsTable";
@@ -12,6 +12,10 @@ import { formatIndianNumber } from "../../utils/numberFormatter";
 const PDFPreviewModal = dynamic(() => import("../../components/PDFPreviewModal"), {
   ssr: false,
   loading: () => <div>Loading PDF...</div>
+});
+
+const QuotationPDF = dynamic(() => import("../../components/QuotationPDF"), {
+  ssr: false
 });
 
 // Define types for our quotation
@@ -31,6 +35,7 @@ interface QuotationData {
   customerAddress: string;
   customerEmail: string;
   customerPhone: string;
+  forOption?: string; // New field for "For" option
   items: QuotationItem[];
   notes: string;
   terms: string;
@@ -39,18 +44,20 @@ interface QuotationData {
   gstAmount: number;
   total: number;
   amountInWords: string;
+  fitInOnePage?: boolean; // New field for one page option
 }
 
 export default function CreateQuotation() {
   // Initialize with default values
   const [quotation, setQuotation] = useState<QuotationData>({
-    quotationNumber: `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    quotationNumber: "GDC/25-26/",
     date: new Date().toISOString().split('T')[0],
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     customerName: "",
     customerAddress: "",
     customerEmail: "",
     customerPhone: "",
+    forOption: "", // New field for "For" option
     items: [
       {
         id: "1",
@@ -66,6 +73,7 @@ export default function CreateQuotation() {
     gstAmount: 0,
     total: 0,
     amountInWords: "Zero Rupees Only",
+    fitInOnePage: false, // New field for one page option
   });
 
   // Add a new item row
@@ -146,9 +154,36 @@ export default function CreateQuotation() {
   // State for PDF preview modal
   const [isPDFPreviewOpen, setIsPDFPreviewOpen] = useState(false);
 
+  // Ref for direct PDF download
+  const quotationPdfRef = useRef<any>(null);
+  const [pdfComponentReady, setPdfComponentReady] = useState(false);
+
   // Show PDF preview
   const generatePDF = () => {
     setIsPDFPreviewOpen(true);
+  };
+
+  // Direct download function
+  const directDownloadPDF = async () => {
+    try {
+      console.log('Direct download clicked, PDF ready:', pdfComponentReady);
+
+      if (!pdfComponentReady) {
+        alert('PDF component is still loading. Please wait a moment and try again.');
+        return;
+      }
+
+      if (quotationPdfRef.current?.downloadPDF) {
+        console.log('Calling direct download');
+        await quotationPdfRef.current.downloadPDF();
+      } else {
+        console.log('Direct PDF ref not ready');
+        alert('PDF component not ready. Please wait a moment and try again.');
+      }
+    } catch (error) {
+      console.error('Direct download error:', error);
+      alert('Error downloading PDF: ' + error.message);
+    }
   };
 
   // Convert to invoice (placeholder function)
@@ -156,6 +191,38 @@ export default function CreateQuotation() {
     alert("This will convert the quotation to an invoice");
     // Implementation will be added later
   };
+
+  // Check if PDF component is ready
+  useEffect(() => {
+    const checkPdfReady = () => {
+      if (quotationPdfRef.current?.downloadPDF) {
+        setPdfComponentReady(true);
+        console.log('PDF component is ready');
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (checkPdfReady()) return;
+
+    // Check every 500ms for up to 10 seconds
+    const interval = setInterval(() => {
+      if (checkPdfReady()) {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      console.log('PDF component check timeout');
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [quotation]); // Re-check when quotation data changes
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 md:p-6">
@@ -166,6 +233,11 @@ export default function CreateQuotation() {
         documentType="quotation"
         data={quotation}
       />
+
+      {/* Hidden PDF component for direct download */}
+      <div style={{ display: 'none' }}>
+        <QuotationPDF ref={quotationPdfRef} quotation={quotation} />
+      </div>
 
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-xl p-6 md:p-8">
         {/* Header with Logo and Title */}
@@ -218,7 +290,11 @@ export default function CreateQuotation() {
                   value={quotation.quotationNumber}
                   onChange={(e) => setQuotation({ ...quotation, quotationNumber: e.target.value })}
                   className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                  placeholder="e.g., GDC/25-26/001, GDC/24-25/ABC, etc."
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  You can customize the entire format (e.g., GDC/25-26/001, GDC/24-25/ABC, etc.)
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -236,6 +312,16 @@ export default function CreateQuotation() {
                   value={parseDate(quotation.validUntil)}
                   onChange={(e) => setQuotation({ ...quotation, validUntil: formatDate(e.target.value) })}
                   className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">For</label>
+                <input
+                  type="text"
+                  value={quotation.forOption || ""}
+                  onChange={(e) => setQuotation({ ...quotation, forOption: e.target.value })}
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                  placeholder="e.g., Distributer Meet- CG, Annual Conference, etc."
                 />
               </div>
             </div>
@@ -356,6 +442,28 @@ export default function CreateQuotation() {
           </div>
         </div>
 
+        {/* PDF Options */}
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+            </svg>
+            PDF Options
+          </h2>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="fitInOnePage"
+              checked={quotation.fitInOnePage || false}
+              onChange={(e) => setQuotation({ ...quotation, fitInOnePage: e.target.checked })}
+              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+            />
+            <label htmlFor="fitInOnePage" className="ml-2 block text-sm text-gray-700">
+              Fit quotation in one page (reduces font sizes and spacing)
+            </label>
+          </div>
+        </div>
+
         {/* Terms and Notes */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-indigo-50 rounded-xl p-6 shadow-md border border-gray-200">
@@ -410,6 +518,16 @@ export default function CreateQuotation() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
             Preview PDF
+          </button>
+          <button
+            onClick={directDownloadPDF}
+            className={`${pdfComponentReady ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400'} text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-md`}
+            disabled={!pdfComponentReady}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {pdfComponentReady ? 'Download PDF' : 'Loading PDF...'}
           </button>
           <button
             className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center justify-center shadow-md"

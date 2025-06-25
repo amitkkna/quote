@@ -3,7 +3,7 @@
 import React, { forwardRef, useImperativeHandle } from "react";
 import { Document, Page, Text, View, StyleSheet, Image, PDFViewer, pdf } from "@react-pdf/renderer";
 import { formatDate } from "../utils/dateFormatter";
-import { formatCurrency } from "../utils/numberFormatter";
+import { formatCurrency, formatRate } from "../utils/numberFormatter";
 import { numberToWords } from "../utils/numberToWords";
 import { getSignatureImage, getSealImage } from "../utils/letterheadImages";
 import ClientOnlyPDFViewer from "./ClientOnlyPDFViewer";
@@ -234,8 +234,12 @@ interface TaxableInvoicePDFProps {
   taxType: 'igst' | 'cgst_sgst';
   subtotal: number;
   taxAmount: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
   total: number;
   termsAndConditions?: string;
+  roundOff?: boolean;
 }
 
 // Document component
@@ -253,26 +257,21 @@ const TaxableInvoiceDocument = ({
   taxType,
   subtotal,
   taxAmount,
+  cgstAmount,
+  sgstAmount,
+  igstAmount,
   total,
   termsAndConditions,
+  roundOff = false,
 }: TaxableInvoicePDFProps) => {
-  const calculateTaxBreakdown = () => {
-    if (taxType === 'igst') {
-      return {
-        igst: (subtotal * taxRates.igst) / 100,
-        cgst: 0,
-        sgst: 0,
-      };
+  // Format currency based on roundOff setting
+  const formatAmount = (amount: number): string => {
+    if (roundOff) {
+      return formatCurrency(Math.round(amount));
     } else {
-      return {
-        igst: 0,
-        cgst: (subtotal * taxRates.cgst) / 100,
-        sgst: (subtotal * taxRates.sgst) / 100,
-      };
+      return formatCurrency(amount, 2);
     }
   };
-
-  const taxBreakdown = calculateTaxBreakdown();
 
   // Calculate items per page based on available space
   const getItemsPerPage = () => {
@@ -387,7 +386,7 @@ const TaxableInvoiceDocument = ({
                 </Text>
               ))}
               <Text style={styles.quantityCol}>{item.quantity}</Text>
-              <Text style={styles.rateCol}>{formatCurrency(item.rate)}</Text>
+              <Text style={styles.rateCol}>{formatRate(item.rate)}</Text>
               <Text style={styles.amountCol}>{formatCurrency(item.amount)}</Text>
             </View>
           ))}
@@ -400,30 +399,30 @@ const TaxableInvoiceDocument = ({
             <View style={styles.taxSection}>
               <View style={styles.taxRow}>
                 <Text>Subtotal:</Text>
-                <Text>{formatCurrency(subtotal)}</Text>
+                <Text>{formatAmount(subtotal)}</Text>
               </View>
 
               {taxType === 'igst' ? (
                 <View style={styles.taxRow}>
                   <Text>IGST ({taxRates.igst}%):</Text>
-                  <Text>{formatCurrency(taxBreakdown.igst)}</Text>
+                  <Text>{formatAmount(igstAmount)}</Text>
                 </View>
               ) : (
                 <>
                   <View style={styles.taxRow}>
                     <Text>CGST ({taxRates.cgst}%):</Text>
-                    <Text>{formatCurrency(taxBreakdown.cgst)}</Text>
+                    <Text>{formatAmount(cgstAmount)}</Text>
                   </View>
                   <View style={styles.taxRow}>
                     <Text>SGST ({taxRates.sgst}%):</Text>
-                    <Text>{formatCurrency(taxBreakdown.sgst)}</Text>
+                    <Text>{formatAmount(sgstAmount)}</Text>
                   </View>
                 </>
               )}
 
               <View style={styles.totalRow}>
                 <Text>Total Amount:</Text>
-                <Text>{formatCurrency(total)}</Text>
+                <Text>{formatAmount(total)}</Text>
               </View>
             </View>
 
@@ -523,7 +522,7 @@ const TaxableInvoiceDocument = ({
                       </Text>
                     ))}
                     <Text style={styles.quantityCol}>{item.quantity}</Text>
-                    <Text style={styles.rateCol}>{formatCurrency(item.rate)}</Text>
+                    <Text style={styles.rateCol}>{formatRate(item.rate)}</Text>
                     <Text style={styles.amountCol}>{formatCurrency(item.amount)}</Text>
                   </View>
                 );
@@ -537,30 +536,30 @@ const TaxableInvoiceDocument = ({
                 <View style={styles.taxSection}>
                   <View style={styles.taxRow}>
                     <Text>Subtotal:</Text>
-                    <Text>{formatCurrency(subtotal)}</Text>
+                    <Text>{formatAmount(subtotal)}</Text>
                   </View>
 
                   {taxType === 'igst' ? (
                     <View style={styles.taxRow}>
                       <Text>IGST ({taxRates.igst}%):</Text>
-                      <Text>{formatCurrency(taxBreakdown.igst)}</Text>
+                      <Text>{formatAmount(igstAmount)}</Text>
                     </View>
                   ) : (
                     <>
                       <View style={styles.taxRow}>
                         <Text>CGST ({taxRates.cgst}%):</Text>
-                        <Text>{formatCurrency(taxBreakdown.cgst)}</Text>
+                        <Text>{formatAmount(cgstAmount)}</Text>
                       </View>
                       <View style={styles.taxRow}>
                         <Text>SGST ({taxRates.sgst}%):</Text>
-                        <Text>{formatCurrency(taxBreakdown.sgst)}</Text>
+                        <Text>{formatAmount(sgstAmount)}</Text>
                       </View>
                     </>
                   )}
 
                   <View style={styles.totalRow}>
                     <Text>Total Amount:</Text>
-                    <Text>{formatCurrency(total)}</Text>
+                    <Text>{formatAmount(total)}</Text>
                   </View>
                 </View>
 

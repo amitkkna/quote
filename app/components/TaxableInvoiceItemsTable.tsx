@@ -81,7 +81,8 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
     const numericQuantity = typeof quantity === 'string'
       ? parseFloat(quantity.match(/^\d*\.?\d+/)?.[0] || '0') || 0
       : quantity;
-    return Math.round(numericQuantity * rate);
+    // Round to 2 decimal places to handle floating point precision
+    return Math.round((numericQuantity * rate) * 100) / 100;
   };
 
   // Update parent component when items change
@@ -359,15 +360,21 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
                         placeholder="e.g. 5 pcs, 2 kg"
                       />
                     ) : column.id === "rate" ? (
-                      // Number input for taxable value
+                      // Number input for taxable value (supports up to 2 decimal places)
                       <input
                         type="number"
                         value={item[column.id] || ""}
-                        onChange={(e) => updateItem(
-                          item.id,
-                          column.id,
-                          e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
-                        )}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "") {
+                            updateItem(item.id, column.id, 0);
+                          } else {
+                            // Parse and round to 2 decimal places
+                            const numValue = parseFloat(value) || 0;
+                            const roundedValue = Math.round(numValue * 100) / 100;
+                            updateItem(item.id, column.id, roundedValue);
+                          }
+                        }}
                         className="block w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-right"
                         min="0"
                         step="0.01"
