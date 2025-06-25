@@ -8,7 +8,7 @@ import ClientOnlyPDFModal from "../../components/ClientOnlyPDFModal";
 interface InvoiceItem {
   id: string;
   description: string;
-  quantity: number;
+  quantity: string; // Changed to string to allow units like "5 pcs", "2 kg"
   rate: number;
   amount: number;
   [key: string]: any;
@@ -39,7 +39,7 @@ export default function CreateTaxableInvoice() {
   const [sameAsBillTo, setSameAsBillTo] = useState(true);
   
   const [items, setItems] = useState<InvoiceItem[]>([
-    { id: "1", description: "", quantity: 1, rate: 0, amount: 0 }
+    { id: "1", description: "", quantity: "1", rate: 0, amount: 0 }
   ]);
   const [customColumns, setCustomColumns] = useState<string[]>([]);
   

@@ -91,6 +91,11 @@ const styles = StyleSheet.create({
     color: '#555',
     fontWeight: 'bold',
   },
+  customerName: {
+    fontSize: 10,
+    marginBottom: 2,
+    fontWeight: 'bold',
+  },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,

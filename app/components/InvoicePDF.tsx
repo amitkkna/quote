@@ -81,6 +81,11 @@ const styles = StyleSheet.create({
     color: '#555',
     fontWeight: 'bold',
   },
+  customerName: {
+    fontSize: 10,
+    marginBottom: 2,
+    fontWeight: 'bold',
+  },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -220,7 +225,7 @@ const InvoicePDF = forwardRef<InvoicePDFRef, { invoice: InvoiceData }>(({ invoic
             </View>
             <View style={styles.detailsRight}>
               <Text style={{...styles.subheader, fontSize: 11, marginBottom: 4}}>To:</Text>
-              <Text style={{fontSize: 10, marginBottom: 2}}>{invoice.customerName}</Text>
+              <Text style={styles.customerName}>{invoice.customerName}</Text>
               <Text style={{fontSize: 10, marginBottom: 2}}>{invoice.customerAddress}</Text>
               <Text style={{fontSize: 10, marginBottom: 2}}>Phone: {invoice.customerPhone}</Text>
               <Text style={{fontSize: 10}}>GST No.: {invoice.customerEmail}</Text>

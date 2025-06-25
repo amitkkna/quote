@@ -82,6 +82,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     padding: 3,
   },
+  customerName: {
+    fontWeight: "bold",
+    fontSize: 11,
+    marginBottom: 3,
+  },
   table: {
     marginBottom: 20,
   },
@@ -289,13 +294,13 @@ const GTCTaxableInvoiceDocument = (props: GTCTaxableInvoicePDFProps) => {
         <View style={styles.addressSection}>
           <View style={styles.addressBox}>
             <Text style={styles.addressTitle}>Bill To:</Text>
-            <Text>{props.billTo.name}</Text>
+            <Text style={styles.customerName}>{props.billTo.name}</Text>
             <Text>{props.billTo.address}</Text>
             {props.billTo.gst && <Text>GST No: {props.billTo.gst}</Text>}
           </View>
           <View style={styles.addressBox}>
             <Text style={styles.addressTitle}>Ship To:</Text>
-            <Text>{props.shipTo.name}</Text>
+            <Text style={styles.customerName}>{props.shipTo.name}</Text>
             <Text>{props.shipTo.address}</Text>
             {props.shipTo.gst && <Text>GST No: {props.shipTo.gst}</Text>}
           </View>
@@ -318,8 +323,8 @@ const GTCTaxableInvoiceDocument = (props: GTCTaxableInvoicePDFProps) => {
             <View key={item.id} style={styles.tableRow}>
               <Text style={styles.serialCol}>{index + 1}</Text>
               <Text style={styles.descriptionCol}>{item.description}</Text>
-              <Text style={styles.hsnCol}>{item.hsnSac || ""}</Text>
-              <Text style={styles.quantityCol}>{item.quantity || 1}</Text>
+              <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
+              <Text style={styles.quantityCol}>{item.quantity || "1"}</Text>
               <Text style={styles.rateCol}>{formatCurrency(item.rate || item.amount || 0)}</Text>
               <Text style={styles.amountCol}>{formatCurrency(item.amount || 0)}</Text>
             </View>

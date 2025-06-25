@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 interface Column {
   id: string;
@@ -13,7 +13,7 @@ interface ItemRow {
   id: string;
   description: string;
   hsn_sac_code: string;
-  quantity: number;
+  quantity: string; // Changed to string to allow text like "5 pcs", "2 units"
   rate: number;
   amount: number;
   [key: string]: any; // Dynamic properties for custom columns
@@ -43,8 +43,20 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
   const [items, setItems] = useState<ItemRow[]>(
     initialItems.length > 0
       ? initialItems.map((item, index) => ({
-          ...item,
-          serial_no: item.serial_no || (index + 1).toString()
+          id: item.id || (index + 1).toString(),
+          serial_no: item.serial_no || (index + 1).toString(),
+          description: item.description || "",
+          hsn_sac_code: item.hsn_sac_code || "",
+          quantity: item.quantity || "1",
+          rate: item.rate || 0,
+          amount: item.amount || 0,
+          // Copy any additional properties
+          ...Object.keys(item).reduce((acc, key) => {
+            if (!['id', 'serial_no', 'description', 'hsn_sac_code', 'quantity', 'rate', 'amount'].includes(key)) {
+              acc[key] = item[key];
+            }
+            return acc;
+          }, {} as any)
         }))
       : [
           {
@@ -52,7 +64,7 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
             serial_no: "1",
             description: "",
             hsn_sac_code: "",
-            quantity: 1,
+            quantity: "1",
             rate: 0,
             amount: 0,
           },
@@ -64,23 +76,29 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
   const [showAddColumn, setShowAddColumn] = useState(false);
 
   // Calculate amount based on quantity and taxable value
-  const calculateAmount = (quantity: number, rate: number): number => {
-    return Math.round(quantity * rate);
+  const calculateAmount = (quantity: string | number, rate: number): number => {
+    // Extract numeric value from quantity string (e.g., "5 pcs" -> 5, "2.5 kg" -> 2.5)
+    const numericQuantity = typeof quantity === 'string'
+      ? parseFloat(quantity.match(/^\d*\.?\d+/)?.[0] || '0') || 0
+      : quantity;
+    return Math.round(numericQuantity * rate);
   };
 
   // Update parent component when items change
+  const stableOnItemsChange = useCallback(onItemsChange, []);
+
   useEffect(() => {
-    onItemsChange(items);
-  }, [items, onItemsChange]);
+    stableOnItemsChange(items);
+  }, [items, stableOnItemsChange]);
 
   // Add a new item row
   const addItem = () => {
     const newItem: ItemRow = {
-      id: (items.length + 1).toString(),
+      id: Date.now().toString(), // Use timestamp for unique ID
       serial_no: (items.length + 1).toString(),
       description: "",
       hsn_sac_code: "",
-      quantity: 1,
+      quantity: "1",
       rate: 0,
       amount: 0,
     };
@@ -92,7 +110,8 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
       }
     });
 
-    const updatedItems = [...items, newItem];
+    // Create a deep copy of existing items to avoid reference sharing
+    const updatedItems = [...items.map(item => ({ ...item })), newItem];
     setItems(updatedItems);
   };
 
@@ -106,18 +125,21 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
   const updateItem = (id: string, field: string, value: any) => {
     const updatedItems = items.map(item => {
       if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
+        // Create a deep copy of the item to avoid reference sharing
+        const updatedItem = { ...item };
+        updatedItem[field] = value;
 
         // Auto-calculate amount when quantity or taxable value changes
         if (field === 'quantity' || field === 'rate') {
-          const quantity = field === 'quantity' ? parseFloat(value) || 0 : item.quantity;
-          const rate = field === 'rate' ? parseFloat(value) || 0 : item.rate;
+          const quantity = field === 'quantity' ? value : updatedItem.quantity;
+          const rate = field === 'rate' ? parseFloat(value) || 0 : updatedItem.rate;
           updatedItem.amount = calculateAmount(quantity, rate);
         }
 
         return updatedItem;
       }
-      return item;
+      // Return a copy of the item to ensure no reference sharing
+      return { ...item };
     });
 
     setItems(updatedItems);
@@ -270,7 +292,7 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
             </button>
           </div>
           <p className="text-xs text-purple-600 mt-2">
-            Custom columns will appear before the Amount column. Amount is automatically calculated from Quantity × Taxable Value.
+            Custom columns will appear before the Amount column. Amount is automatically calculated from Quantity × Taxable Value. You can add units to quantity (e.g., "5 pcs", "2 kg").
           </p>
         </div>
       )}
@@ -327,8 +349,17 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
                         rows={2}
                         placeholder="Enter description (Ctrl+Enter for new line)"
                       />
-                    ) : column.id === "quantity" || column.id === "rate" ? (
-                      // Number inputs for quantity and taxable value
+                    ) : column.id === "quantity" ? (
+                      // Text input for quantity (allows units like "5 pcs", "2 kg")
+                      <input
+                        type="text"
+                        value={item[column.id] || ""}
+                        onChange={(e) => updateItem(item.id, column.id, e.target.value)}
+                        className="block w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-center"
+                        placeholder="e.g. 5 pcs, 2 kg"
+                      />
+                    ) : column.id === "rate" ? (
+                      // Number input for taxable value
                       <input
                         type="number"
                         value={item[column.id] || ""}
@@ -339,8 +370,8 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
                         )}
                         className="block w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-right"
                         min="0"
-                        step={column.id === "quantity" ? "1" : "0.01"}
-                        placeholder={column.id === "quantity" ? "1" : "0.00"}
+                        step="0.01"
+                        placeholder="0.00"
                       />
                     ) : column.id === "amount" ? (
                       // Amount (read-only, calculated)
