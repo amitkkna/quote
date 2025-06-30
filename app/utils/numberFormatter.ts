@@ -64,10 +64,10 @@ export const formatCurrency = (num: number | string | undefined | null, decimals
 };
 
 /**
- * Format a rate/taxable value with 2 decimal places
+ * Format a rate/taxable value with 0 decimal places
  * @param num The number to format
- * @returns Formatted rate string (e.g., "25,000.50")
+ * @returns Formatted rate string (e.g., "25,000")
  */
 export const formatRate = (num: number | string | undefined | null): string => {
-  return formatIndianNumber(num, 2);
+  return formatIndianNumber(num, 0);
 };

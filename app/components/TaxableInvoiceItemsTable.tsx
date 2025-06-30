@@ -22,11 +22,15 @@ interface ItemRow {
 interface TaxableInvoiceItemsTableProps {
   initialItems?: ItemRow[];
   onItemsChange: (items: ItemRow[]) => void;
+  onCustomColumnsChange?: (customColumns: string[]) => void;
+  onCustomColumnsMapChange?: (customColumnsMap: {[key: string]: string}) => void;
 }
 
 const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
   initialItems = [],
   onItemsChange,
+  onCustomColumnsChange,
+  onCustomColumnsMapChange,
 }) => {
   // Default required columns for taxable invoice
   const defaultColumns: Column[] = [
@@ -92,6 +96,24 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
     stableOnItemsChange(items);
   }, [items, stableOnItemsChange]);
 
+  // Notify parent component when custom columns change
+  useEffect(() => {
+    const customCols = columns.filter(col => !col.isRequired);
+
+    if (onCustomColumnsChange) {
+      const customColumns = customCols.map(col => col.name); // Column names for display
+      onCustomColumnsChange(customColumns);
+    }
+
+    if (onCustomColumnsMapChange) {
+      const customColumnsMap = customCols.reduce((acc, col) => {
+        acc[col.name] = col.id; // Map display name to data key
+        return acc;
+      }, {} as {[key: string]: string});
+      onCustomColumnsMapChange(customColumnsMap);
+    }
+  }, [columns, onCustomColumnsChange, onCustomColumnsMapChange]);
+
   // Add a new item row
   const addItem = () => {
     const newItem: ItemRow = {
@@ -128,6 +150,13 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
       if (item.id === id) {
         // Create a deep copy of the item to avoid reference sharing
         const updatedItem = { ...item };
+
+        // Capitalize first letter for text fields (except numeric fields and HSN/SAC code)
+        if (typeof value === 'string' && value.length > 0 &&
+            field !== 'rate' && field !== 'amount' && field !== 'hsn_sac_code' && field !== 'quantity') {
+          value = value.charAt(0).toUpperCase() + value.slice(1);
+        }
+
         updatedItem[field] = value;
 
         // Auto-calculate amount when quantity or taxable value changes
@@ -158,9 +187,12 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
       return;
     }
 
+    // Capitalize first letter of column name
+    const capitalizedName = newColumnName.charAt(0).toUpperCase() + newColumnName.slice(1);
+
     const newColumn: Column = {
       id: columnId,
-      name: newColumnName,
+      name: capitalizedName,
       width: "15%",
       isRequired: false,
     };
@@ -305,7 +337,7 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
               {columns.map((column) => (
                 <th
                   key={column.id}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 tracking-wider"
                   style={{ width: column.width }}
                 >
                   <div className="flex items-center justify-between">

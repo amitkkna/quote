@@ -220,12 +220,13 @@ interface TaxableInvoicePDFProps {
     id: string;
     description: string;
     hsn_sac_code: string;
-    quantity: number;
+    quantity: string | number; // Allow both string and number for units like "5 pcs"
     rate: number;
     amount: number;
     [key: string]: any;
   }>;
   customColumns: string[];
+  customColumnsMap?: {[key: string]: string};
   taxRates: {
     igst: number;
     cgst: number;
@@ -253,6 +254,7 @@ const TaxableInvoiceDocument = ({
   shipTo,
   items,
   customColumns,
+  customColumnsMap = {},
   taxRates,
   taxType,
   subtotal,
@@ -380,11 +382,14 @@ const TaxableInvoiceDocument = ({
               <Text style={styles.serialCol}>{index + 1}</Text>
               <Text style={styles.descriptionCol}>{item.description}</Text>
               <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
-              {customColumns.map((col, colIndex) => (
-                <Text key={colIndex} style={styles.customCol}>
-                  {item[col] || ""}
-                </Text>
-              ))}
+              {customColumns.map((col, colIndex) => {
+                const dataKey = customColumnsMap[col] || col; // Use mapping to get data key
+                return (
+                  <Text key={colIndex} style={styles.customCol}>
+                    {item[dataKey] || ""}
+                  </Text>
+                );
+              })}
               <Text style={styles.quantityCol}>{item.quantity}</Text>
               <Text style={styles.rateCol}>{formatRate(item.rate)}</Text>
               <Text style={styles.amountCol}>{formatCurrency(item.amount)}</Text>
@@ -516,11 +521,14 @@ const TaxableInvoiceDocument = ({
                     <Text style={styles.serialCol}>{globalIndex + 1}</Text>
                     <Text style={styles.descriptionCol}>{item.description}</Text>
                     <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
-                    {customColumns.map((col, colIndex) => (
-                      <Text key={colIndex} style={styles.customCol}>
-                        {item[col] || ""}
-                      </Text>
-                    ))}
+                    {customColumns.map((col, colIndex) => {
+                      const dataKey = customColumnsMap[col] || col; // Use mapping to get data key
+                      return (
+                        <Text key={colIndex} style={styles.customCol}>
+                          {item[dataKey] || ""}
+                        </Text>
+                      );
+                    })}
                     <Text style={styles.quantityCol}>{item.quantity}</Text>
                     <Text style={styles.rateCol}>{formatRate(item.rate)}</Text>
                     <Text style={styles.amountCol}>{formatCurrency(item.amount)}</Text>
@@ -640,13 +648,33 @@ const TaxableInvoiceDocument = ({
 const TaxableInvoicePDF = forwardRef<{ downloadPDF: () => Promise<void> }, TaxableInvoicePDFProps>((props, ref) => {
   useImperativeHandle(ref, () => ({
     downloadPDF: async () => {
-      const blob = await pdf(<TaxableInvoiceDocument {...props} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `taxable-invoice-${props.invoiceNumber || 'draft'}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
+      try {
+        console.log('Starting taxable invoice PDF generation');
+        const blob = await pdf(<TaxableInvoiceDocument {...props} />).toBlob();
+        console.log('PDF blob generated successfully, size:', blob.size);
+
+        // Create filename: InvoiceNumber-CustomerName-Amount (no spaces, no currency symbol)
+        const invoiceNumber = props.invoiceNumber || 'draft';
+        const customerName = (props.billTo?.name || 'Customer')
+          .replace(/[^a-zA-Z0-9]/g, '')  // Remove all special characters and spaces
+          .toLowerCase()
+          .substring(0, 20);
+        const totalAmount = Math.round(props.total || 0); // Remove decimals
+        const filename = `${invoiceNumber}-${customerName}-${totalAmount}.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        console.log('Taxable invoice PDF download initiated successfully');
+      } catch (error) {
+        console.error('Error generating taxable invoice PDF:', error);
+        alert('Error generating PDF. Please check the console for details.');
+      }
     },
   }));
 

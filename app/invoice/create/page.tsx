@@ -14,12 +14,12 @@ const PDFPreviewModal = dynamic(() => import("../../components/PDFPreviewModal")
   loading: () => <div>Loading PDF...</div>
 });
 
-// Define types for our invoice
+// Define types for our invoice (compatible with DynamicItemsTable)
 interface InvoiceItem {
   id: string;
-  serial_no: string;
-  description: string;
-  amount: number;
+  serial_no?: string;
+  description?: string;
+  amount?: number | string;
   [key: string]: any; // For dynamic custom columns
 }
 
@@ -57,7 +57,7 @@ export default function CreateInvoice() {
         description: "",
         amount: 0,
       },
-    ],
+    ] as InvoiceItem[],
     notes: "",
     subtotal: 0,
     gstRate: 18, // Default GST rate in India
@@ -74,10 +74,12 @@ export default function CreateInvoice() {
       description: "",
       amount: 0,
     };
-    setInvoice({
+    const updatedInvoice = {
       ...invoice,
       items: [...invoice.items, newItem],
-    });
+    };
+    setInvoice(updatedInvoice);
+    recalculateTotals(updatedInvoice);
   };
 
   // Remove an item row
@@ -109,7 +111,7 @@ export default function CreateInvoice() {
   const recalculateTotals = (updatedInvoice: InvoiceData) => {
     const subtotal = updatedInvoice.items.reduce((sum, item) => {
       // Convert empty strings or undefined to 0
-      const amount = item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
+      const amount = typeof item.amount === 'string' && item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
       return sum + amount;
     }, 0);
     const gstAmount = (subtotal * updatedInvoice.gstRate) / 100;

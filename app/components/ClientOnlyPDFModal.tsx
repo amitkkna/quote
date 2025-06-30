@@ -131,9 +131,12 @@ const ClientOnlyPDFModal: React.FC<ClientOnlyPDFModalProps> = ({
           await rudharmaTaxableInvoicePdfRef.current.downloadPDF();
         } else if (taxableInvoicePdfRef.current?.downloadPDF) {
           console.log('Downloading standard taxable invoice PDF');
+          console.log('Taxable invoice data:', data);
           await taxableInvoicePdfRef.current.downloadPDF();
         } else {
           console.log('No valid PDF ref found for taxable invoice');
+          console.log('Taxable invoice ref status:', !!taxableInvoicePdfRef.current);
+          console.log('Download function available:', !!taxableInvoicePdfRef.current?.downloadPDF);
           alert('PDF component not ready. Please wait a moment and try again.');
         }
       } else {

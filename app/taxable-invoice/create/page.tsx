@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import TaxableInvoiceItemsTable from "../../components/TaxableInvoiceItemsTable";
 import ClientOnlyPDFModal from "../../components/ClientOnlyPDFModal";
+
+// Dynamic import for direct PDF download
+const TaxableInvoicePDF = dynamic(() => import("../../components/TaxableInvoicePDF"), {
+  ssr: false
+});
 
 interface InvoiceItem {
   id: string;
   description: string;
+  hsn_sac_code: string;
   quantity: string; // Changed to string to allow units like "5 pcs", "2 kg"
   rate: number;
   amount: number;
@@ -39,9 +46,10 @@ export default function CreateTaxableInvoice() {
   const [sameAsBillTo, setSameAsBillTo] = useState(true);
   
   const [items, setItems] = useState<InvoiceItem[]>([
-    { id: "1", description: "", quantity: "1", rate: 0, amount: 0 }
+    { id: "1", description: "", hsn_sac_code: "", quantity: "1", rate: 0, amount: 0 }
   ]);
   const [customColumns, setCustomColumns] = useState<string[]>([]);
+  const [customColumnsMap, setCustomColumnsMap] = useState<{[key: string]: string}>({});
   
   // Tax Configuration
   const [taxRates, setTaxRates] = useState<TaxRates>({
@@ -55,6 +63,10 @@ export default function CreateTaxableInvoice() {
   const [fitToOnePage, setFitToOnePage] = useState(false);
   const [roundOff, setRoundOff] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Direct PDF download
+  const taxableInvoicePdfRef = useRef<any>(null);
+  const [pdfComponentReady, setPdfComponentReady] = useState(false);
 
   const handleSameAsBillToChange = (checked: boolean) => {
     setSameAsBillTo(checked);
@@ -127,6 +139,31 @@ export default function CreateTaxableInvoice() {
     setShowPreview(true);
   };
 
+
+
+  // Direct download function
+  const directDownloadPDF = async () => {
+    try {
+      console.log('Direct taxable invoice download clicked, PDF ready:', pdfComponentReady);
+
+      if (!pdfComponentReady) {
+        alert('PDF component is still loading. Please wait a moment and try again.');
+        return;
+      }
+
+      if (taxableInvoicePdfRef.current?.downloadPDF) {
+        console.log('Calling direct taxable invoice download');
+        await taxableInvoicePdfRef.current.downloadPDF();
+      } else {
+        console.log('Direct taxable invoice PDF ref not ready');
+        alert('PDF component not ready. Please wait a moment and try again.');
+      }
+    } catch (error) {
+      console.error('Direct taxable invoice download error:', error);
+      alert('Error downloading PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
   const invoiceData = {
     companyName,
     invoiceNumber,
@@ -145,6 +182,7 @@ export default function CreateTaxableInvoice() {
     },
     items,
     customColumns,
+    customColumnsMap,
     taxRates,
     taxType,
     subtotal: calculateSubtotal(),
@@ -157,6 +195,38 @@ export default function CreateTaxableInvoice() {
     fitToOnePage,
     roundOff
   };
+
+  // Check if PDF component is ready
+  useEffect(() => {
+    const checkPdfReady = () => {
+      if (taxableInvoicePdfRef.current?.downloadPDF) {
+        setPdfComponentReady(true);
+        console.log('Taxable invoice PDF component is ready');
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (checkPdfReady()) return;
+
+    // Check every 500ms for up to 10 seconds
+    const interval = setInterval(() => {
+      if (checkPdfReady()) {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      console.log('Taxable invoice PDF component check timeout');
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [invoiceData]); // Re-check when invoice data changes
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -399,6 +469,8 @@ export default function CreateTaxableInvoice() {
           <TaxableInvoiceItemsTable
             initialItems={items}
             onItemsChange={setItems}
+            onCustomColumnsChange={setCustomColumns}
+            onCustomColumnsMapChange={setCustomColumnsMap}
           />
         </div>
 
@@ -605,7 +677,22 @@ export default function CreateTaxableInvoice() {
             >
               Preview & Download PDF
             </button>
+            <button
+              onClick={directDownloadPDF}
+              className={`${pdfComponentReady ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400'} text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center`}
+              disabled={!pdfComponentReady}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {pdfComponentReady ? 'Direct Download PDF' : 'Loading PDF...'}
+            </button>
           </div>
+        </div>
+
+        {/* Hidden PDF component for direct download */}
+        <div style={{ display: 'none' }}>
+          <TaxableInvoicePDF ref={taxableInvoicePdfRef} {...invoiceData} />
         </div>
 
         {/* PDF Preview Modal */}
