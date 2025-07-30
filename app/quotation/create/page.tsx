@@ -35,6 +35,7 @@ interface QuotationData {
   customerAddress: string;
   customerEmail: string;
   customerPhone: string;
+  subject?: string;
   forOption?: string; // New field for "For" option
   items: QuotationItem[];
   notes: string;
@@ -57,6 +58,7 @@ export default function CreateQuotation() {
     customerAddress: "",
     customerEmail: "",
     customerPhone: "",
+    subject: "",
     forOption: "", // New field for "For" option
     items: [
       {
@@ -353,6 +355,16 @@ export default function CreateQuotation() {
                   className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                   rows={2}
                   placeholder="Enter customer address"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject <span className="text-gray-500 text-xs">(Optional)</span></label>
+                <input
+                  type="text"
+                  value={quotation.subject}
+                  onChange={(e) => setQuotation({ ...quotation, subject: e.target.value })}
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                  placeholder="Enter subject for the quotation (optional)"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

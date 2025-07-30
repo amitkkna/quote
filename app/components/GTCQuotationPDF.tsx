@@ -410,7 +410,13 @@ const GTCQuotationPDF = forwardRef<GTCQuotationPDFRef, { quotation: QuotationDat
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `GTC-Quotation-${quotation.quotationNumber}.pdf`;
+
+      // Create custom filename: CustomerName_Date_QuotationNumber
+      const customerName = quotation.customerName.replace(/[^a-zA-Z0-9]/g, '_') || 'Customer';
+      const date = quotation.date.replace(/[^0-9]/g, '');
+      const quotationNumber = quotation.quotationNumber.replace(/[^a-zA-Z0-9]/g, '_');
+      link.download = `${customerName}_${date}_${quotationNumber}.pdf`;
+
       link.click();
       URL.revokeObjectURL(url);
     }
