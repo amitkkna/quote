@@ -65,6 +65,8 @@ export default function CreateQuotation() {
         id: "1",
         serial_no: "1",
         description: "",
+        qty: "",
+        price: "",
         amount: 0,
       },
     ],

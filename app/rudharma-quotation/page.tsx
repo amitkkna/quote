@@ -64,6 +64,8 @@ export default function RudharmaQuotation() {
         id: "1",
         serial_no: "1",
         description: "",
+        qty: "",
+        price: "",
         amount: 0,
       },
     ],
@@ -74,7 +76,10 @@ export default function RudharmaQuotation() {
     amountInWords: "Zero Rupees Only",
     notes: "",
     terms: "Terms and conditions apply.",
-    customColumns: [],
+    customColumns: [
+      { id: "qty", name: "Qty", width: "10%" },
+      { id: "price", name: "Price", width: "12%" },
+    ],
   });
 
   // State for PDF preview modal

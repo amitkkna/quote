@@ -124,6 +124,22 @@ export default function BulkQuotation() {
     }
   });
 
+  // Shared columns state for synchronization
+  const [sharedColumns, setSharedColumns] = useState<any[]>([]);
+
+  // Price adjustment percentages
+  const [priceAdjustments, setPriceAdjustments] = useState({
+    gdc: 0, // Percentage higher than GTC
+    rudharma: 0, // Percentage higher than GTC
+  });
+
+  // Check if qty and price columns exist for auto-calculation
+  const hasQtyAndPriceColumns = (columns: any[]) => {
+    const hasQty = columns.some(col => ['qty', 'quantity'].includes(col.id.toLowerCase()));
+    const hasPrice = columns.some(col => ['price', 'rate'].includes(col.id.toLowerCase()));
+    return hasQty && hasPrice;
+  };
+
   // Recalculate totals for a specific company
   const recalculateTotals = (companyKey: keyof typeof companyConfigs, updatedQuotation: CompanyQuotation) => {
     const subtotal = updatedQuotation.items.reduce((sum, item) => {
@@ -206,6 +222,173 @@ export default function BulkQuotation() {
     }
   };
 
+  // Apply price adjustments to other companies based on GTC prices
+  const applyPriceAdjustments = (gtcItems: QuotationItem[]) => {
+    if (!autoSyncFromGTC) return;
+
+    setBulkQuotation(prev => {
+      const updated = { ...prev };
+
+      // Update GDC prices
+      if (!manuallyEdited.gdc.items) {
+        updated.gdc.items = gtcItems.map(gtcItem => {
+          const gdcItem = { ...gtcItem };
+          if (gdcItem.price && !isNaN(parseFloat(gdcItem.price))) {
+            const basePrice = parseFloat(gdcItem.price);
+            const adjustedPrice = basePrice * (1 + priceAdjustments.gdc / 100);
+            gdcItem.price = adjustedPrice.toFixed(2);
+
+            // Recalculate amount if qty exists
+            if (gdcItem.qty && !isNaN(parseFloat(gdcItem.qty))) {
+              const qty = parseFloat(gdcItem.qty);
+              gdcItem.amount = qty * adjustedPrice;
+            }
+          }
+          return gdcItem;
+        });
+      }
+
+      // Update Rudharma prices
+      if (!manuallyEdited.rudharma.items) {
+        updated.rudharma.items = gtcItems.map(gtcItem => {
+          const rudharmaItem = { ...gtcItem };
+          if (rudharmaItem.price && !isNaN(parseFloat(rudharmaItem.price))) {
+            const basePrice = parseFloat(rudharmaItem.price);
+            const adjustedPrice = basePrice * (1 + priceAdjustments.rudharma / 100);
+            rudharmaItem.price = adjustedPrice.toFixed(2);
+
+            // Recalculate amount if qty exists
+            if (rudharmaItem.qty && !isNaN(parseFloat(rudharmaItem.qty))) {
+              const qty = parseFloat(rudharmaItem.qty);
+              rudharmaItem.amount = qty * adjustedPrice;
+            }
+          }
+          return rudharmaItem;
+        });
+      }
+
+      return updated;
+    });
+  };
+
+  // Handle price adjustment percentage changes
+  const handlePriceAdjustmentChange = (company: 'gdc' | 'rudharma', percentage: number) => {
+    setPriceAdjustments(prev => {
+      const newAdjustments = {
+        ...prev,
+        [company]: percentage
+      };
+
+      // Apply the new percentage immediately to existing items
+      if (autoSyncFromGTC) {
+        setBulkQuotation(prevBulk => {
+          const updated = { ...prevBulk };
+
+          // Update the specific company's items with new percentage
+          if (company === 'gdc' && !manuallyEdited.gdc.items) {
+            updated.gdc.items = prevBulk.gtc.items.map(gtcItem => {
+              const gdcItem = { ...gtcItem };
+              if (gdcItem.price && !isNaN(parseFloat(gdcItem.price))) {
+                const basePrice = parseFloat(gdcItem.price);
+                const adjustedPrice = basePrice * (1 + percentage / 100);
+                gdcItem.price = adjustedPrice.toFixed(2);
+
+                // Recalculate amount if qty exists
+                if (gdcItem.qty && !isNaN(parseFloat(gdcItem.qty))) {
+                  const qty = parseFloat(gdcItem.qty);
+                  gdcItem.amount = qty * adjustedPrice;
+                }
+              }
+              return gdcItem;
+            });
+
+            // Recalculate totals for GDC
+            setTimeout(() => {
+              recalculateTotals('gdc', updated.gdc);
+            }, 0);
+          }
+
+          if (company === 'rudharma' && !manuallyEdited.rudharma.items) {
+            updated.rudharma.items = prevBulk.gtc.items.map(gtcItem => {
+              const rudharmaItem = { ...gtcItem };
+              if (rudharmaItem.price && !isNaN(parseFloat(rudharmaItem.price))) {
+                const basePrice = parseFloat(rudharmaItem.price);
+                const adjustedPrice = basePrice * (1 + percentage / 100);
+                rudharmaItem.price = adjustedPrice.toFixed(2);
+
+                // Recalculate amount if qty exists
+                if (rudharmaItem.qty && !isNaN(parseFloat(rudharmaItem.qty))) {
+                  const qty = parseFloat(rudharmaItem.qty);
+                  rudharmaItem.amount = qty * adjustedPrice;
+                }
+              }
+              return rudharmaItem;
+            });
+
+            // Recalculate totals for Rudharma
+            setTimeout(() => {
+              recalculateTotals('rudharma', updated.rudharma);
+            }, 0);
+          }
+
+          return updated;
+        });
+      }
+
+      return newAdjustments;
+    });
+  };
+
+  // Handle column changes and synchronize across all companies
+  const handleColumnChange = (sourceCompany: keyof typeof companyConfigs, newColumns: any[]) => {
+    console.log(`Column change from ${sourceCompany}:`, newColumns);
+
+    // If auto-sync is enabled and source is GTC, sync to other companies
+    if (autoSyncFromGTC && sourceCompany === 'gtc') {
+      setBulkQuotation(prev => {
+        const updated = { ...prev };
+
+        // Update all companies with the new column structure
+        Object.keys(updated).forEach(companyKey => {
+          const company = updated[companyKey as keyof typeof updated];
+          const updatedItems = company.items.map(item => {
+            const newItem = { ...item };
+
+            // Add new columns with empty values
+            newColumns.forEach(col => {
+              if (!(col.id in newItem)) {
+                if (col.id === 'qty' || col.id === 'price') {
+                  newItem[col.id] = '';
+                } else if (col.id === 'amount') {
+                  newItem[col.id] = 0;
+                } else {
+                  newItem[col.id] = '';
+                }
+              }
+            });
+
+            // Remove columns that no longer exist (except required ones)
+            Object.keys(newItem).forEach(key => {
+              if (!newColumns.some(col => col.id === key) &&
+                  !['id', 'serial_no', 'description', 'amount'].includes(key)) {
+                delete newItem[key];
+              }
+            });
+
+            return newItem;
+          });
+
+          updated[companyKey as keyof typeof updated] = {
+            ...company,
+            items: updatedItems
+          };
+        });
+
+        return updated;
+      });
+    }
+  };
+
   // Handle individual company items change
   const handleCompanyItemsChange = (companyKey: keyof typeof companyConfigs, updatedItems: QuotationItem[]) => {
     if (companyKey === 'gtc' && autoSyncFromGTC) {
@@ -214,12 +397,42 @@ export default function BulkQuotation() {
 
       // Only update GDC if items haven't been manually edited
       if (!manuallyEdited.gdc.items) {
-        updates.gdc = { ...bulkQuotation.gdc, items: updatedItems };
+        const gdcItems = updatedItems.map(gtcItem => {
+          const gdcItem = { ...gtcItem };
+          if (gdcItem.price && !isNaN(parseFloat(gdcItem.price)) && priceAdjustments.gdc !== 0) {
+            const basePrice = parseFloat(gdcItem.price);
+            const adjustedPrice = basePrice * (1 + priceAdjustments.gdc / 100);
+            gdcItem.price = adjustedPrice.toFixed(2);
+
+            // Recalculate amount if qty exists
+            if (gdcItem.qty && !isNaN(parseFloat(gdcItem.qty))) {
+              const qty = parseFloat(gdcItem.qty);
+              gdcItem.amount = qty * adjustedPrice;
+            }
+          }
+          return gdcItem;
+        });
+        updates.gdc = { ...bulkQuotation.gdc, items: gdcItems };
       }
 
       // Only update Rudharma if items haven't been manually edited
       if (!manuallyEdited.rudharma.items) {
-        updates.rudharma = { ...bulkQuotation.rudharma, items: updatedItems };
+        const rudharmaItems = updatedItems.map(gtcItem => {
+          const rudharmaItem = { ...gtcItem };
+          if (rudharmaItem.price && !isNaN(parseFloat(rudharmaItem.price)) && priceAdjustments.rudharma !== 0) {
+            const basePrice = parseFloat(rudharmaItem.price);
+            const adjustedPrice = basePrice * (1 + priceAdjustments.rudharma / 100);
+            rudharmaItem.price = adjustedPrice.toFixed(2);
+
+            // Recalculate amount if qty exists
+            if (rudharmaItem.qty && !isNaN(parseFloat(rudharmaItem.qty))) {
+              const qty = parseFloat(rudharmaItem.qty);
+              rudharmaItem.amount = qty * adjustedPrice;
+            }
+          }
+          return rudharmaItem;
+        });
+        updates.rudharma = { ...bulkQuotation.rudharma, items: rudharmaItems };
       }
 
       setBulkQuotation(prev => ({ ...prev, ...updates }));
@@ -464,6 +677,98 @@ export default function BulkQuotation() {
           </div>
         </div>
 
+        {/* Price Adjustment Controls */}
+        {autoSyncFromGTC && (
+          <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              Price Adjustments
+            </h2>
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200 mb-4">
+              <p className="text-sm text-gray-700 mb-4">
+                Set percentage adjustments for GDC and Rudharma prices compared to GTC base prices.
+                When you enter prices in GTC, other companies will automatically get adjusted prices.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* GDC Price Adjustment */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <label className="text-sm font-medium text-gray-700">GDC Price Adjustment:</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={priceAdjustments.gdc}
+                      onChange={(e) => handlePriceAdjustmentChange('gdc', parseFloat(e.target.value) || 0)}
+                      className="w-20 border border-gray-300 rounded-lg shadow-sm p-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      min="-100"
+                      max="1000"
+                      step="0.1"
+                      placeholder="0"
+                    />
+                    <span className="text-sm text-gray-600">% higher than GTC</span>
+                  </div>
+                </div>
+
+                {/* Rudharma Price Adjustment */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                    <label className="text-sm font-medium text-gray-700">Rudharma Price Adjustment:</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={priceAdjustments.rudharma}
+                      onChange={(e) => handlePriceAdjustmentChange('rudharma', parseFloat(e.target.value) || 0)}
+                      className="w-20 border border-gray-300 rounded-lg shadow-sm p-2 text-center focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
+                      min="-100"
+                      max="1000"
+                      step="0.1"
+                      placeholder="0"
+                    />
+                    <span className="text-sm text-gray-600">% higher than GTC</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Example Display */}
+              <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-xs text-gray-600">Example: If GTC price is ₹100</p>
+                  <button
+                    onClick={() => {
+                      // Apply current percentages to all existing items
+                      handlePriceAdjustmentChange('gdc', priceAdjustments.gdc);
+                      handlePriceAdjustmentChange('rudharma', priceAdjustments.rudharma);
+                    }}
+                    className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition-colors duration-200"
+                  >
+                    Apply to Existing Items
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-xs">
+                  <div className="text-center">
+                    <div className="font-medium text-gray-700">GTC</div>
+                    <div className="text-green-600">₹100.00</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-gray-700">GDC</div>
+                    <div className="text-blue-600">₹{(100 * (1 + priceAdjustments.gdc / 100)).toFixed(2)}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium text-gray-700">Rudharma</div>
+                    <div className="text-orange-600">₹{(100 * (1 + priceAdjustments.rudharma / 100)).toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Company Tabs */}
         <div className="bg-white rounded-xl shadow-md mb-8 border border-gray-200">
           <div className="border-b border-gray-200">
@@ -628,6 +933,8 @@ export default function BulkQuotation() {
                     <DynamicItemsTable
                       initialItems={quotation.items}
                       onItemsChange={(items) => handleCompanyItemsChange(companyKey, items)}
+                      onColumnsChange={(columns) => handleColumnChange(companyKey, columns)}
+                      autoCalculateAmount={true}
                     />
                   </div>
 

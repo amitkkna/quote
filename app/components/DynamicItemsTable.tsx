@@ -20,20 +20,26 @@ interface DynamicItemsTableProps {
   initialColumns?: Column[];
   initialItems?: ItemRow[];
   onItemsChange: (items: ItemRow[]) => void;
+  onColumnsChange?: (columns: Column[]) => void;
   calculateAmount?: (item: ItemRow) => number;
+  autoCalculateAmount?: boolean;
 }
 
 const DynamicItemsTable = ({
   initialColumns = [],
   initialItems = [],
   onItemsChange,
+  onColumnsChange,
   calculateAmount,
+  autoCalculateAmount = false,
 }: DynamicItemsTableProps) => {
-  // Default required columns
+  // Default columns (qty and price are removable, others are required)
   const defaultColumns: Column[] = [
     { id: "serial_no", name: "S. No.", width: "8%", isRequired: true },
-    { id: "description", name: "Description", width: "40%", isRequired: true },
-    { id: "amount", name: "Amount", width: "20%", isRequired: true },
+    { id: "description", name: "Description", width: "30%", isRequired: true },
+    { id: "qty", name: "Qty", width: "10%", isRequired: false },
+    { id: "price", name: "Price", width: "12%", isRequired: false },
+    { id: "amount", name: "Amount", width: "15%", isRequired: true },
   ];
 
   // State for columns and items
@@ -53,6 +59,8 @@ const DynamicItemsTable = ({
             id: "1",
             serial_no: "1",
             description: "",
+            qty: "",
+            price: "",
             amount: 0,
           },
         ]
@@ -74,6 +82,10 @@ const DynamicItemsTable = ({
         newItem[column.id] = (items.length + 1).toString();
       } else if (column.id === "description") {
         newItem[column.id] = "";
+      } else if (column.id === "qty") {
+        newItem[column.id] = "";
+      } else if (column.id === "price") {
+        newItem[column.id] = "";
       } else if (column.id === "amount") {
         newItem[column.id] = ""; // Empty string instead of 0
       } else {
@@ -93,13 +105,38 @@ const DynamicItemsTable = ({
     onItemsChange(updatedItems);
   };
 
+  // Auto-calculate amount based on qty and price
+  const autoCalculateItemAmount = (item: ItemRow) => {
+    // Always try to auto-calculate if qty and price columns exist and have values
+    const hasQtyColumn = columns.some(col => col.id === 'qty');
+    const hasPriceColumn = columns.some(col => col.id === 'price');
+
+    if (hasQtyColumn && hasPriceColumn) {
+      const qty = parseFloat(item.qty || '0') || 0;
+      const price = parseFloat(item.price || '0') || 0;
+      if (qty > 0 && price > 0) {
+        return qty * price;
+      }
+    }
+
+    return item.amount || 0;
+  };
+
   // Update item value
   const updateItem = (id: string, field: string, value: any) => {
     const updatedItems = items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
 
-        // We no longer need to recalculate amount since we're directly entering it
+        // Auto-calculate amount if qty or price is updated
+        if (field === 'qty' || field === 'price') {
+          updatedItem.amount = autoCalculateItemAmount(updatedItem);
+        }
+
+        // If there's a custom calculation function, use it
+        if (calculateAmount && field !== 'amount') {
+          updatedItem.amount = calculateAmount(updatedItem);
+        }
 
         return updatedItem;
       }
@@ -156,6 +193,12 @@ const DynamicItemsTable = ({
 
     setItems(updatedItems);
     onItemsChange(updatedItems);
+
+    // Notify parent about column changes
+    if (onColumnsChange) {
+      onColumnsChange(updatedColumns);
+    }
+
     setNewColumnName("");
     setShowAddColumn(false);
   };
@@ -167,7 +210,8 @@ const DynamicItemsTable = ({
     if (column?.isRequired) return;
 
     // Remove the column
-    setColumns(columns.filter(col => col.id !== columnId));
+    const updatedColumns = columns.filter(col => col.id !== columnId);
+    setColumns(updatedColumns);
 
     // Remove this field from all items
     const updatedItems = items.map(item => {
@@ -178,6 +222,11 @@ const DynamicItemsTable = ({
 
     setItems(updatedItems);
     onItemsChange(updatedItems);
+
+    // Notify parent about column changes
+    if (onColumnsChange) {
+      onColumnsChange(updatedColumns);
+    }
   };
 
   return (
