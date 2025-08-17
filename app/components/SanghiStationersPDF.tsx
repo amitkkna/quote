@@ -1,6 +1,15 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, PDFViewer, Image } from '@react-pdf/renderer';
-import ClientOnlyPDFViewer from './ClientOnlyPDFViewer';
+"use client";
+
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamic import to avoid ES Module issues during build
+const ClientOnlyPDFViewer = dynamic(() => import('./ClientOnlyPDFViewer'), {
+  ssr: false
+});
+
+// Dynamic imports for PDF components
+let Document: any, Page: any, Text: any, View: any, StyleSheet: any, pdf: any, PDFViewer: any, Image: any;
 
 interface QuotationItem {
   id: string;
@@ -36,7 +45,7 @@ interface SanghiStationersPDFProps {
   quotation: QuotationData;
 }
 
-const styles = StyleSheet.create({
+const createStyles = () => StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
@@ -320,6 +329,7 @@ const styles = StyleSheet.create({
 });
 
 const SanghiStationersPDFDocument = ({ quotation }: SanghiStationersPDFProps) => {
+  const styles = createStyles();
   // Get custom columns dynamically from the first item
   const getCustomColumns = () => {
     if (!quotation.items || quotation.items.length === 0) return [];
@@ -517,8 +527,37 @@ const SanghiStationersPDFDocument = ({ quotation }: SanghiStationersPDFProps) =>
 };
 
 const SanghiStationersPDF = forwardRef<any, SanghiStationersPDFProps>((props, ref) => {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // Load PDF components dynamically on client side
+    const loadPDFComponents = async () => {
+      try {
+        const reactPdfModule = await import('@react-pdf/renderer');
+        Document = reactPdfModule.Document;
+        Page = reactPdfModule.Page;
+        Text = reactPdfModule.Text;
+        View = reactPdfModule.View;
+        StyleSheet = reactPdfModule.StyleSheet;
+        pdf = reactPdfModule.pdf;
+        PDFViewer = reactPdfModule.PDFViewer;
+        Image = reactPdfModule.Image;
+        setIsClient(true);
+      } catch (error) {
+        console.error('Failed to load PDF components:', error);
+      }
+    };
+
+    loadPDFComponents();
+  }, []);
+
   useImperativeHandle(ref, () => ({
     downloadPDF: async () => {
+      if (!isClient || !pdf) {
+        console.error('PDF components not loaded yet');
+        return;
+      }
+
       try {
         const blob = await pdf(<SanghiStationersPDFDocument {...props} />).toBlob();
         
@@ -542,6 +581,17 @@ const SanghiStationersPDF = forwardRef<any, SanghiStationersPDFProps>((props, re
       }
     }
   }));
+
+  if (!isClient || !PDFViewer) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading PDF viewer...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ClientOnlyPDFViewer>

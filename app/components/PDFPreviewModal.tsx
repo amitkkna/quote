@@ -181,9 +181,10 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
     console.log('Direct download approach');
 
     try {
-      // Import React and PDF generation function
+      // Dynamic import React and PDF generation function to avoid ES Module issues
       const React = await import('react');
-      const { pdf, Document, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer');
+      const reactPdfModule = await import('@react-pdf/renderer');
+      const { pdf, Document, Page, Text, View, StyleSheet } = reactPdfModule;
 
       let filename = 'document.pdf';
 
