@@ -1,11 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import { isSupabaseConfigured } from "./lib/supabase";
 
 export default function Home() {
+  const supabaseConfigured = isSupabaseConfigured();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="relative">
+        {/* Configuration Notice */}
+        {!supabaseConfigured && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <h3 className="text-sm font-semibold text-yellow-800">Database Configuration Required</h3>
+                  <p className="text-yellow-700 text-xs mt-1">
+                    Configure Supabase environment variables to use database features. See README.md for setup.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-16">

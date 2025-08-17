@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import TaxableInvoiceItemsTable from "../../components/TaxableInvoiceItemsTable";
 import ClientOnlyPDFModal from "../../components/ClientOnlyPDFModal";
-import { customerService, invoiceService, Customer, TaxableInvoice } from "../../lib/supabase";
+import { customerService, invoiceService, Customer, TaxableInvoice, isSupabaseConfigured } from "../../lib/supabase";
 
 // Dynamic import for direct PDF download
 const TaxableInvoicePDF = dynamic(() => import("../../components/TaxableInvoicePDF"), {
@@ -168,6 +168,11 @@ function CreateTaxableInvoiceContent() {
   const saveInvoiceToDatabase = async () => {
     if (!invoiceNumber || !billToName || items.length === 0) {
       alert("Please fill in all required fields before saving");
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      alert("Database not configured. Please set up Supabase environment variables.");
       return;
     }
 

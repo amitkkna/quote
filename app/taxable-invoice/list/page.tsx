@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { invoiceService, TaxableInvoice } from "../../lib/supabase";
+import { invoiceService, TaxableInvoice, isSupabaseConfigured } from "../../lib/supabase";
 
 // Dynamic import for PDF generation
 const TaxableInvoicePDF = dynamic(() => import("../../components/TaxableInvoicePDF"), {
@@ -37,6 +37,13 @@ export default function TaxableInvoiceList() {
     try {
       setLoading(true);
       setError(null);
+
+      if (!isSupabaseConfigured()) {
+        console.warn('Supabase not configured, using empty data');
+        setInvoices([]);
+        return;
+      }
+
       const data = await invoiceService.getTaxableInvoices();
       setInvoices(data as TaxableInvoiceWithCustomer[]);
     } catch (err) {

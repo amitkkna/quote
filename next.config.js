@@ -12,7 +12,7 @@ const nextConfig = {
   distDir: '.next',
   reactStrictMode: true,
   swcMinify: true,
-  // Temporarily disable static export to allow dynamic routes
+  // Disable static export for dynamic routes compatibility
   // output: 'export',
   trailingSlash: true,
   experimental: {

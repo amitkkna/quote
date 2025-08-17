@@ -1,9 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create a safe Supabase client that handles missing environment variables
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false
+  }
+})
+
+// Helper function to check if Supabase is properly configured
+export const isSupabaseConfigured = () => {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
 
 // Database Types
 export interface Customer {
@@ -77,6 +87,11 @@ export interface TaxableInvoiceCustomColumn {
 export const customerService = {
   // Create or update customer
   async upsertCustomer(customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, returning mock customer')
+      return { id: 'mock-id', ...customer, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    }
+
     // First try to find existing customer by name and address
     const { data: existingCustomer } = await supabase
       .from('customers')
@@ -144,6 +159,12 @@ export const invoiceService = {
     customColumns?: string[],
     customColumnsMap?: Record<string, string>
   ): Promise<{ invoice: TaxableInvoice; items: TaxableInvoiceItem[]; customColumns: TaxableInvoiceCustomColumn[] }> {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, returning mock data')
+      const mockInvoice = { id: 'mock-invoice-id', ...invoiceData, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+      return { invoice: mockInvoice as TaxableInvoice, items: [], customColumns: [] }
+    }
+
     // Start a transaction
     const { data: invoice, error: invoiceError } = await supabase
       .from('taxable_invoices')
@@ -209,6 +230,11 @@ export const invoiceService = {
 
   // Get all taxable invoices
   async getTaxableInvoices(): Promise<TaxableInvoice[]> {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, returning empty array')
+      return []
+    }
+
     const { data, error } = await supabase
       .from('taxable_invoices')
       .select(`
@@ -228,6 +254,11 @@ export const invoiceService = {
     customer: Customer;
     customColumns: TaxableInvoiceCustomColumn[];
   } | null> {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, returning null')
+      return null
+    }
+
     const { data: invoice, error: invoiceError } = await supabase
       .from('taxable_invoices')
       .select(`

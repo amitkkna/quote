@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 interface MonthlySalesData {
   invoice_number: string;
@@ -62,6 +62,12 @@ export default function Reports() {
   };
 
   const loadMonthlySalesData = async () => {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, using empty data');
+      setMonthlySales([]);
+      return;
+    }
+
     let query = supabase
       .from('taxable_invoices')
       .select(`
@@ -129,6 +135,12 @@ export default function Reports() {
   };
 
   const loadHSNSummaryData = async () => {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, using empty data');
+      setHsnSacData([]);
+      return;
+    }
+
     let query = supabase
       .from('taxable_invoice_items')
       .select(`
@@ -214,6 +226,12 @@ export default function Reports() {
   };
 
   const loadAvailableYears = async () => {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, using current year');
+      setAvailableYears([new Date().getFullYear()]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('taxable_invoices')
       .select('invoice_date')
