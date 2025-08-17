@@ -46,6 +46,7 @@ interface QuotationData {
   notes: string;
   terms: string;
   customColumns: CustomColumn[];
+  roundOff: boolean;
 }
 
 export default function RudharmaQuotation() {

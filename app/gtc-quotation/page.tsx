@@ -46,6 +46,7 @@ interface QuotationData {
   notes: string;
   terms: string;
   customColumns: CustomColumn[];
+  roundOff: boolean;
 }
 
 export default function GTCQuotation() {
@@ -80,6 +81,7 @@ export default function GTCQuotation() {
       { id: "qty", name: "Qty", width: "10%" },
       { id: "price", name: "Price", width: "12%" },
     ],
+    roundOff: false,
   });
 
   // State for PDF preview modal
@@ -123,12 +125,20 @@ export default function GTCQuotation() {
 
   // Recalculate subtotal, GST, and total
   const recalculateTotals = (updatedQuotation: QuotationData) => {
-    const subtotal = updatedQuotation.items.reduce((sum, item) => {
+    let subtotal = updatedQuotation.items.reduce((sum, item) => {
       const amount = item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
       return sum + amount;
     }, 0);
-    const gstAmount = (subtotal * updatedQuotation.gstRate) / 100;
-    const total = subtotal + gstAmount;
+    let gstAmount = (subtotal * updatedQuotation.gstRate) / 100;
+    let total = subtotal + gstAmount;
+
+    // Apply rounding if enabled
+    if (updatedQuotation.roundOff) {
+      subtotal = Math.round(subtotal);
+      gstAmount = Math.round(gstAmount);
+      total = Math.round(total);
+    }
+
     const totalInWords = amountInWords(total);
 
     setQuotation({
@@ -138,6 +148,28 @@ export default function GTCQuotation() {
       total,
       amountInWords: totalInWords,
     });
+  };
+
+  // Recalculate all item amounts based on qty and price
+  const recalculateAllItems = () => {
+    const updatedItems = quotation.items.map(item => {
+      const qty = parseFloat(item.qty || '0') || 0;
+      const price = parseFloat(item.price || '0') || 0;
+      let calculatedAmount = qty > 0 && price > 0 ? qty * price : 0;
+
+      // Apply rounding to individual item amounts if enabled
+      if (quotation.roundOff) {
+        calculatedAmount = Math.round(calculatedAmount);
+      }
+
+      return {
+        ...item,
+        amount: calculatedAmount
+      };
+    });
+
+    const updatedQuotation = { ...quotation, items: updatedItems };
+    recalculateTotals(updatedQuotation);
   };
 
   // Handle GST rate change
@@ -570,9 +602,43 @@ export default function GTCQuotation() {
           <div className="bg-gray-50 rounded-xl p-6 shadow-md border border-gray-200">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Summary</h3>
             <div className="space-y-4">
+              {/* Round Off Toggle */}
+              <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                <span className="text-gray-700 font-medium">Round Off to Nearest Rupee:</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={quotation.roundOff}
+                    onChange={(e) => {
+                      setQuotation({ ...quotation, roundOff: e.target.checked });
+                      setTimeout(() => {
+                        recalculateAllItems();
+                      }, 0);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                </label>
+              </div>
+
+              {/* See Calculation Button */}
+              <div className="flex justify-center pb-3 border-b border-gray-200">
+                <button
+                  onClick={() => {
+                    recalculateAllItems();
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center text-sm font-medium"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  See Calculation
+                </button>
+              </div>
+
               <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                 <span className="text-gray-600">Subtotal:</span>
-                <span className="text-gray-800 font-medium">₹{formatIndianNumber(quotation.subtotal || 0)}</span>
+                <span className="text-gray-800 font-medium">₹{quotation.roundOff ? formatIndianNumber(Math.round(quotation.subtotal || 0)) : formatIndianNumber(quotation.subtotal || 0)}</span>
               </div>
               <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                 <span className="text-gray-600">GST:</span>
@@ -586,12 +652,12 @@ export default function GTCQuotation() {
                     max="100"
                   />
                   <span className="text-gray-600 mr-2">%</span>
-                  <span className="text-gray-800 font-medium">₹{formatIndianNumber(quotation.gstAmount || 0)}</span>
+                  <span className="text-gray-800 font-medium">₹{quotation.roundOff ? formatIndianNumber(Math.round(quotation.gstAmount || 0)) : formatIndianNumber(quotation.gstAmount || 0)}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center pt-2">
                 <span className="text-lg font-bold text-gray-800">Total:</span>
-                <span className="text-lg font-bold text-red-600">₹{formatIndianNumber(quotation.total || 0)}</span>
+                <span className="text-lg font-bold text-red-600">₹{quotation.roundOff ? formatIndianNumber(Math.round(quotation.total || 0)) : formatIndianNumber(quotation.total || 0)}</span>
               </div>
               <div className="pt-4 mt-2 border-t border-gray-200">
                 <p className="text-gray-600 italic text-sm">

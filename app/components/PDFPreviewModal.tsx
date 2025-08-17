@@ -5,6 +5,8 @@ import InvoicePDF from './InvoicePDF';
 import QuotationPDF from './QuotationPDF';
 import GTCQuotationPDF from './GTCQuotationPDF';
 import RudharmaQuotationPDF from './RudharmaQuotationPDF';
+import SAPromotionsPDF from './SAPromotionsPDF';
+import SanghiStationersPDF from './SanghiStationersPDF';
 import ChallanPDF from './ChallanPDF';
 import TaxableInvoicePDF from './TaxableInvoicePDF';
 import GTCTaxableInvoicePDF from './GTCTaxableInvoicePDF';
@@ -36,6 +38,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   const quotationPdfRef = useRef<any>(null);
   const gtcQuotationPdfRef = useRef<any>(null);
   const rudharmaQuotationPdfRef = useRef<any>(null);
+  const saPromotionsPdfRef = useRef<any>(null);
+  const sanghiStationersPdfRef = useRef<any>(null);
   const challanPdfRef = useRef<any>(null);
   const taxableInvoicePdfRef = useRef<any>(null);
   const gtcTaxableInvoicePdfRef = useRef<any>(null);
@@ -423,6 +427,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
         const allRefs = [
           { name: 'gtcQuotation', ref: gtcQuotationPdfRef },
           { name: 'rudharmaQuotation', ref: rudharmaQuotationPdfRef },
+          { name: 'saPromotions', ref: saPromotionsPdfRef },
+          { name: 'sanghiStationers', ref: sanghiStationersPdfRef },
           { name: 'quotation', ref: quotationPdfRef },
           { name: 'invoice', ref: invoicePdfRef },
           { name: 'challan', ref: challanPdfRef },
@@ -526,6 +532,10 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
                 <GTCQuotationPDF ref={gtcQuotationPdfRef} quotation={data} />
               ) : data.companyName?.includes('Rudharma') ? (
                 <RudharmaQuotationPDF ref={rudharmaQuotationPdfRef} quotation={data} />
+              ) : data.companyName?.includes('SA Promotions') ? (
+                <SAPromotionsPDF ref={saPromotionsPdfRef} quotation={data} />
+              ) : data.companyName?.includes('Sanghi Stationers') ? (
+                <SanghiStationersPDF ref={sanghiStationersPdfRef} quotation={data} />
               ) : (
                 <QuotationPDF ref={quotationPdfRef} quotation={data} />
               )

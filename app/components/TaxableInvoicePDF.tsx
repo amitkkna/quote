@@ -1,12 +1,19 @@
 "use client";
 
 import React, { forwardRef, useImperativeHandle } from "react";
-import { Document, Page, Text, View, StyleSheet, Image, PDFViewer, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image, PDFViewer, pdf, Font } from "@react-pdf/renderer";
 import { formatDate } from "../utils/dateFormatter";
 import { formatCurrency, formatRate } from "../utils/numberFormatter";
 import { numberToWords } from "../utils/numberToWords";
 import { getSignatureImage, getSealImage } from "../utils/letterheadImages";
 import ClientOnlyPDFViewer from "./ClientOnlyPDFViewer";
+
+// Register Hindi font - using a working approach for @react-pdf/renderer
+// For now, we'll use system font support and add proper font later
+// Font.register({
+//   family: 'HindiFont',
+//   src: '/fonts/NotoSansDevanagari-Regular.ttf' // We'll add this file later
+// });
 
 const styles = StyleSheet.create({
   page: {
@@ -205,7 +212,9 @@ interface TaxableInvoicePDFProps {
   invoiceDate: string;
   poReference?: string;
   poDate?: string;
+  poReferenceHindi?: string;
   fitToOnePage?: boolean;
+  hindiMode?: boolean;
   billTo: {
     name: string;
     address: string;
@@ -219,6 +228,7 @@ interface TaxableInvoicePDFProps {
   items: Array<{
     id: string;
     description: string;
+    descriptionHindi?: string;
     hsn_sac_code: string;
     quantity: string | number; // Allow both string and number for units like "5 pcs"
     rate: number;
@@ -249,7 +259,9 @@ const TaxableInvoiceDocument = ({
   invoiceDate,
   poReference,
   poDate,
+  poReferenceHindi,
   fitToOnePage = false,
+  hindiMode = false,
   billTo,
   shipTo,
   items,
@@ -266,6 +278,9 @@ const TaxableInvoiceDocument = ({
   termsAndConditions,
   roundOff = false,
 }: TaxableInvoicePDFProps) => {
+  // Dynamic font family based on Hindi mode
+  const fontFamily = hindiMode ? 'NotoSansDevanagari' : 'Helvetica';
+
   // Format currency based on roundOff setting
   const formatAmount = (amount: number): string => {
     if (roundOff) {
@@ -333,7 +348,7 @@ const TaxableInvoiceDocument = ({
 
     // First Page
     pages.push(
-      <Page key={1} size="A4" style={fitToOnePage ? styles.pageCompact : styles.page}>
+      <Page key={1} size="A4" style={fitToOnePage ? {...styles.pageCompact, fontFamily} : {...styles.page, fontFamily}}>
         {/* Header */}
         {renderHeader()}
 
@@ -347,7 +362,16 @@ const TaxableInvoiceDocument = ({
           <View style={styles.invoiceInfo}>
             <Text>Invoice No: {invoiceNumber}</Text>
             <Text>Invoice Date: {formatDate(invoiceDate)}</Text>
-            {poReference && <Text>PO Reference: {poReference}</Text>}
+            {poReference && (
+              <View>
+                <Text>PO Reference: {poReference}</Text>
+                {poReferenceHindi && (
+                  <Text style={{fontSize: 9, color: '#666'}}>
+                    पीओ संदर्भ: {poReferenceHindi}
+                  </Text>
+                )}
+              </View>
+            )}
             {poDate && <Text>PO Date: {formatDate(poDate)}</Text>}
           </View>
           <View style={styles.invoiceInfo}>
@@ -380,7 +404,14 @@ const TaxableInvoiceDocument = ({
           {getItemsForPage(1).map((item, index) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={styles.serialCol}>{index + 1}</Text>
-              <Text style={styles.descriptionCol}>{item.description}</Text>
+              <View style={styles.descriptionCol}>
+                <Text>{item.description}</Text>
+                {item.descriptionHindi && (
+                  <Text style={{fontSize: 8, color: '#666', marginTop: 2}}>
+                    {item.descriptionHindi}
+                  </Text>
+                )}
+              </View>
               <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
               {customColumns.map((col, colIndex) => {
                 const dataKey = customColumnsMap[col] || col; // Use mapping to get data key
@@ -500,7 +531,7 @@ const TaxableInvoiceDocument = ({
         const isLastPage = pageNumber === totalPages;
 
         pages.push(
-          <Page key={pageNumber} size="A4" style={styles.page}>
+          <Page key={pageNumber} size="A4" style={{...styles.page, fontFamily}}>
             {/* Header on each page */}
             {renderHeader()}
 
@@ -519,7 +550,14 @@ const TaxableInvoiceDocument = ({
                 return (
                   <View key={item.id} style={styles.tableRow}>
                     <Text style={styles.serialCol}>{globalIndex + 1}</Text>
-                    <Text style={styles.descriptionCol}>{item.description}</Text>
+                    <View style={styles.descriptionCol}>
+                      <Text>{item.description}</Text>
+                      {item.descriptionHindi && (
+                        <Text style={{fontSize: 8, color: '#666', marginTop: 2}}>
+                          {item.descriptionHindi}
+                        </Text>
+                      )}
+                    </View>
                     <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
                     {customColumns.map((col, colIndex) => {
                       const dataKey = customColumnsMap[col] || col; // Use mapping to get data key

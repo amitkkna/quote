@@ -105,7 +105,7 @@ export default function Home() {
           </div>
 
           {/* Individual Company Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
             {/* Global Trading Corporation */}
             <div className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-white/20 hover:scale-105">
               <div className="flex items-center mb-4">
@@ -175,6 +175,54 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 <span className="font-medium">Create Rudharma Quote</span>
+              </Link>
+            </div>
+
+            {/* SA Promotions */}
+            <div className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-white/20 hover:scale-105">
+              <div className="flex items-center mb-4">
+                <div className="bg-purple-100 text-purple-600 p-3 rounded-xl mr-4 group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 group-hover:text-purple-600 transition-colors">SA Promotions</h3>
+              </div>
+              <p className="text-gray-600 mb-4 text-sm">
+                Create quotations for SA Promotions with their unique branding and promotional services.
+              </p>
+              <Link
+                href="/sa-promotions-quotation"
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center shadow-sm group-hover:scale-105"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="font-medium">Create SA Quote</span>
+              </Link>
+            </div>
+
+            {/* Sanghi Stationers */}
+            <div className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-white/20 hover:scale-105">
+              <div className="flex items-center mb-4">
+                <div className="bg-teal-100 text-teal-600 p-3 rounded-xl mr-4 group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 group-hover:text-teal-600 transition-colors">Sanghi Stationers</h3>
+              </div>
+              <p className="text-gray-600 mb-4 text-sm">
+                Create quotations for Sanghi Stationers & Enterprises with their stationery business branding.
+              </p>
+              <Link
+                href="/sanghi-stationers-quotation"
+                className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors duration-200 flex items-center justify-center shadow-sm group-hover:scale-105"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="font-medium">Create SS Quote</span>
               </Link>
             </div>
           </div>

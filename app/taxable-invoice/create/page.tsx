@@ -61,6 +61,7 @@ export default function CreateTaxableInvoice() {
 
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [fitToOnePage, setFitToOnePage] = useState(false);
+  const [hindiMode, setHindiMode] = useState(false);
   const [roundOff, setRoundOff] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -193,6 +194,7 @@ export default function CreateTaxableInvoice() {
     total: calculateTotal(),
     termsAndConditions,
     fitToOnePage,
+    hindiMode,
     roundOff
   };
 
