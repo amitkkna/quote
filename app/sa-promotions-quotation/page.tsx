@@ -2,8 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import PDFPreviewModal from '../components/PDFPreviewModal';
+import dynamic from 'next/dynamic';
 import DynamicItemsTable from '../components/DynamicItemsTable';
+
+// Dynamic import to avoid ES Module issues during build
+const PDFPreviewModal = dynamic(() => import('../components/PDFPreviewModal'), {
+  ssr: false
+});
 
 interface QuotationItem {
   id: string;
