@@ -328,19 +328,27 @@ const TaxableInvoiceDocument = ({
   );
 
   // Table header component (reusable for all pages)
-  const renderTableHeader = () => (
-    <View style={styles.tableHeader}>
-      <Text style={styles.serialCol}>S.No.</Text>
-      <Text style={styles.descriptionCol}>Description</Text>
-      <Text style={styles.hsnCol}>HSN/SAC Code</Text>
-      {customColumns.map((col, index) => (
-        <Text key={index} style={styles.customCol}>{col}</Text>
-      ))}
-      <Text style={styles.quantityCol}>Qty</Text>
-      <Text style={styles.rateCol}>Taxable Value</Text>
-      <Text style={styles.amountCol}>Amount</Text>
-    </View>
-  );
+  const renderTableHeader = () => {
+    // Debug logging
+    console.log('=== PDF COMPONENT DEBUG ===');
+    console.log('Custom Columns in PDF:', customColumns);
+    console.log('Custom Columns Map in PDF:', customColumnsMap);
+    console.log('Items in PDF:', items);
+
+    return (
+      <View style={styles.tableHeader}>
+        <Text style={styles.serialCol}>S.No.</Text>
+        <Text style={styles.descriptionCol}>Description</Text>
+        <Text style={styles.hsnCol}>HSN/SAC Code</Text>
+        {customColumns.map((col, index) => (
+          <Text key={index} style={styles.customCol}>{customColumnsMap[col] || col}</Text>
+        ))}
+        <Text style={styles.quantityCol}>Qty</Text>
+        <Text style={styles.rateCol}>Taxable Value</Text>
+        <Text style={styles.amountCol}>Amount</Text>
+      </View>
+    );
+  };
 
   // Generate all pages
   const renderAllPages = () => {
@@ -414,10 +422,9 @@ const TaxableInvoiceDocument = ({
               </View>
               <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
               {customColumns.map((col, colIndex) => {
-                const dataKey = customColumnsMap[col] || col; // Use mapping to get data key
                 return (
                   <Text key={colIndex} style={styles.customCol}>
-                    {item[dataKey] || ""}
+                    {item[col] || ""}
                   </Text>
                 );
               })}
@@ -560,10 +567,9 @@ const TaxableInvoiceDocument = ({
                     </View>
                     <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
                     {customColumns.map((col, colIndex) => {
-                      const dataKey = customColumnsMap[col] || col; // Use mapping to get data key
                       return (
                         <Text key={colIndex} style={styles.customCol}>
-                          {item[dataKey] || ""}
+                          {item[col] || ""}
                         </Text>
                       );
                     })}

@@ -225,6 +225,8 @@ interface RudharmaTaxableInvoicePDFProps {
     gst: string;
   };
   items: any[];
+  customColumns?: string[];
+  customColumnsMap?: {[key: string]: string};
   taxRates: any;
   taxType: string;
   subtotal: number;
@@ -236,6 +238,12 @@ interface RudharmaTaxableInvoicePDFProps {
 
 // Document component for Rudharma
 const RudharmaTaxableInvoiceDocument = (props: RudharmaTaxableInvoicePDFProps) => {
+  // Debug logging for Rudharma PDF
+  console.log('=== RUDHARMA PDF DEBUG ===');
+  console.log('Custom Columns:', props.customColumns);
+  console.log('Custom Columns Map:', props.customColumnsMap);
+  console.log('Items:', props.items);
+
   const calculateTaxBreakdown = () => {
     if (props.taxType === 'igst') {
       return {
@@ -310,6 +318,11 @@ const RudharmaTaxableInvoiceDocument = (props: RudharmaTaxableInvoicePDFProps) =
             <Text style={styles.serialCol}>S.No.</Text>
             <Text style={styles.descriptionCol}>Description</Text>
             <Text style={styles.hsnCol}>HSN/SAC Code</Text>
+            {(props.customColumns || []).map((col, index) => (
+              <Text key={index} style={styles.customCol}>
+                {(props.customColumnsMap && props.customColumnsMap[col]) || col}
+              </Text>
+            ))}
             <Text style={styles.quantityCol}>Qty</Text>
             <Text style={styles.rateCol}>Taxable Value</Text>
             <Text style={styles.amountCol}>Amount</Text>
@@ -321,6 +334,11 @@ const RudharmaTaxableInvoiceDocument = (props: RudharmaTaxableInvoicePDFProps) =
               <Text style={styles.serialCol}>{index + 1}</Text>
               <Text style={styles.descriptionCol}>{item.description}</Text>
               <Text style={styles.hsnCol}>{item.hsn_sac_code || ""}</Text>
+              {(props.customColumns || []).map((col, colIndex) => (
+                <Text key={colIndex} style={styles.customCol}>
+                  {item[col] || ""}
+                </Text>
+              ))}
               <Text style={styles.quantityCol}>{item.quantity || "1"}</Text>
               <Text style={styles.rateCol}>{formatRate(item.rate || 0)}</Text>
               <Text style={styles.amountCol}>{formatCurrency(item.amount || 0)}</Text>

@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import TaxableInvoiceItemsTable from "../../components/TaxableInvoiceItemsTable";
 import ClientOnlyPDFModal from "../../components/ClientOnlyPDFModal";
+import { customerService, invoiceService, Customer, TaxableInvoice } from "../../lib/supabase";
 
 // Dynamic import for direct PDF download
 const TaxableInvoicePDF = dynamic(() => import("../../components/TaxableInvoicePDF"), {
+  ssr: false
+});
+
+const GTCTaxableInvoicePDF = dynamic(() => import("../../components/GTCTaxableInvoicePDF"), {
+  ssr: false
+});
+
+const RudharmaTaxableInvoicePDF = dynamic(() => import("../../components/RudharmaTaxableInvoicePDF"), {
   ssr: false
 });
 
@@ -27,7 +37,14 @@ interface TaxRates {
   sgst: number;
 }
 
-export default function CreateTaxableInvoice() {
+function CreateTaxableInvoiceContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check if we're in edit mode
+  const isEditMode = searchParams.get('edit') === 'true';
+  const editInvoiceId = searchParams.get('invoiceId');
+
   const [companyName, setCompanyName] = useState("Global Digital Connect");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -65,8 +82,15 @@ export default function CreateTaxableInvoice() {
   const [roundOff, setRoundOff] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Direct PDF download
+  // Database state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
+
+  // Direct PDF download refs for different companies
   const taxableInvoicePdfRef = useRef<any>(null);
+  const gtcTaxableInvoicePdfRef = useRef<any>(null);
+  const rudharmaTaxableInvoicePdfRef = useRef<any>(null);
   const [pdfComponentReady, setPdfComponentReady] = useState(false);
 
   const handleSameAsBillToChange = (checked: boolean) => {
@@ -140,6 +164,128 @@ export default function CreateTaxableInvoice() {
     setShowPreview(true);
   };
 
+  // Save invoice to database
+  const saveInvoiceToDatabase = async () => {
+    if (!invoiceNumber || !billToName || items.length === 0) {
+      alert("Please fill in all required fields before saving");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveStatus('saving');
+
+    try {
+      // First, create or update customer
+      const customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'> = {
+        name: billToName,
+        address: billToAddress,
+        gst_number: billToGST || undefined,
+      };
+
+      const customer = await customerService.upsertCustomer(customerData);
+
+      // Prepare invoice data
+      const invoiceData: Omit<TaxableInvoice, 'id' | 'created_at' | 'updated_at'> = {
+        invoice_number: invoiceNumber,
+        invoice_date: invoiceDate,
+        po_reference: poReference || undefined,
+        po_date: poDate || undefined,
+        customer_id: customer.id!,
+        company_name: companyName,
+        bill_to_name: billToName,
+        bill_to_address: billToAddress,
+        bill_to_gst: billToGST || undefined,
+        ship_to_name: shipToName,
+        ship_to_address: shipToAddress,
+        ship_to_gst: shipToGST || undefined,
+        subtotal: calculateSubtotal(),
+        tax_type: taxType,
+        igst_rate: taxRates.igst,
+        cgst_rate: taxRates.cgst,
+        sgst_rate: taxRates.sgst,
+        igst_amount: calculateIGSTAmount(),
+        cgst_amount: calculateCGSTAmount(),
+        sgst_amount: calculateSGSTAmount(),
+        tax_amount: calculateTaxAmount(),
+        total: calculateTotal(),
+        terms_and_conditions: termsAndConditions || undefined,
+        round_off: roundOff,
+        hindi_mode: hindiMode,
+        fit_to_one_page: fitToOnePage,
+        status: 'draft'
+      };
+
+      // Prepare items data - include all item properties for custom columns
+      const itemsData = items.map((item) => {
+        const baseData = {
+          description: item.description,
+          description_hindi: item.description_hindi,
+          hsn_sac_code: item.hsn_sac_code,
+          quantity: item.quantity,
+          rate: item.rate,
+          amount: item.amount,
+        };
+
+        // Include all custom column values using the column IDs as keys
+        const customData = customColumns.reduce((acc, colId) => {
+          if (item[colId] !== undefined && item[colId] !== '') {
+            acc[colId] = item[colId];
+          }
+          return acc;
+        }, {} as Record<string, any>);
+
+        return { ...baseData, ...customData };
+      });
+
+      // Debug logging
+      console.log("=== SAVING INVOICE DEBUG ===");
+      console.log("Custom Columns:", customColumns);
+      console.log("Custom Columns Map:", customColumnsMap);
+      console.log("Items Data:", itemsData);
+      console.log("Raw Items:", items);
+
+      // Save to database with custom columns
+      let result;
+      if (isEditMode && editInvoiceId) {
+        // Update existing invoice
+        result = await invoiceService.updateTaxableInvoice(
+          editInvoiceId,
+          invoiceData,
+          itemsData,
+          customColumns.length > 0 ? customColumns : undefined,
+          customColumns.length > 0 ? customColumnsMap : undefined
+        );
+      } else {
+        // Create new invoice
+        result = await invoiceService.saveTaxableInvoice(
+          invoiceData,
+          itemsData,
+          customColumns.length > 0 ? customColumns : undefined,
+          customColumns.length > 0 ? customColumnsMap : undefined
+        );
+      }
+
+      setSavedInvoiceId(result.invoice?.id || result.invoiceId);
+      setSaveStatus('saved');
+
+      // Show success message and handle navigation
+      if (isEditMode) {
+        alert(`Invoice ${invoiceNumber} updated successfully!`);
+        // Redirect to view page after successful update
+        router.push(`/taxable-invoice/view/${editInvoiceId}`);
+      } else {
+        alert(`Invoice ${invoiceNumber} saved successfully!`);
+      }
+
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      setSaveStatus('error');
+      alert('Error saving invoice: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
 
   // Direct download function
@@ -152,9 +298,22 @@ export default function CreateTaxableInvoice() {
         return;
       }
 
-      if (taxableInvoicePdfRef.current?.downloadPDF) {
+      // Determine which PDF component to use based on company name
+      let pdfRef = null;
+      if (companyName.includes('Global Trading Corporation')) {
+        pdfRef = gtcTaxableInvoicePdfRef.current;
+        console.log('Using GTC PDF component');
+      } else if (companyName.includes('Rudharma')) {
+        pdfRef = rudharmaTaxableInvoicePdfRef.current;
+        console.log('Using Rudharma PDF component');
+      } else {
+        pdfRef = taxableInvoicePdfRef.current;
+        console.log('Using default PDF component');
+      }
+
+      if (pdfRef?.downloadPDF) {
         console.log('Calling direct taxable invoice download');
-        await taxableInvoicePdfRef.current.downloadPDF();
+        await pdfRef.downloadPDF();
       } else {
         console.log('Direct taxable invoice PDF ref not ready');
         alert('PDF component not ready. Please wait a moment and try again.');
@@ -198,12 +357,98 @@ export default function CreateTaxableInvoice() {
     roundOff
   };
 
+  // Load edit data if in edit mode
+  useEffect(() => {
+    if (isEditMode && searchParams) {
+      loadEditData();
+    }
+  }, [isEditMode, searchParams]);
+
+  const loadEditData = () => {
+    try {
+      // Load basic invoice data from URL parameters
+      setCompanyName(searchParams.get('companyName') || 'Global Digital Connect');
+      setInvoiceNumber(searchParams.get('invoiceNumber') || '');
+      setInvoiceDate(searchParams.get('invoiceDate') || new Date().toISOString().split('T')[0]);
+      setPOReference(searchParams.get('poReference') || '');
+      setPODate(searchParams.get('poDate') || '');
+
+      setBillToName(searchParams.get('billToName') || '');
+      setBillToAddress(searchParams.get('billToAddress') || '');
+      setBillToGST(searchParams.get('billToGST') || '');
+
+      setShipToName(searchParams.get('shipToName') || '');
+      setShipToAddress(searchParams.get('shipToAddress') || '');
+      setShipToGST(searchParams.get('shipToGST') || '');
+
+      setTaxType(searchParams.get('taxType') as 'igst' | 'cgst_sgst' || 'cgst_sgst');
+      setTaxRates({
+        igst: parseFloat(searchParams.get('igstRate') || '0'),
+        cgst: parseFloat(searchParams.get('cgstRate') || '9'),
+        sgst: parseFloat(searchParams.get('sgstRate') || '9')
+      });
+
+      setTermsAndConditions(searchParams.get('termsAndConditions') || '');
+      setFitToOnePage(searchParams.get('fitToOnePage') === 'true');
+      setHindiMode(searchParams.get('hindiMode') === 'true');
+      setRoundOff(searchParams.get('roundOff') === 'true');
+
+      // Load items and custom columns from JSON
+      const itemsJson = searchParams.get('items');
+      const customColumnsJson = searchParams.get('customColumns');
+
+      if (itemsJson) {
+        const parsedItems = JSON.parse(itemsJson);
+        setItems(parsedItems.map((item: any) => ({
+          id: item.id,
+          description: item.description,
+          hsn_sac_code: item.hsn_sac_code,
+          quantity: item.quantity,
+          rate: item.rate,
+          amount: item.amount,
+          ...item.custom_columns // Spread custom column data
+        })));
+      }
+
+      if (customColumnsJson) {
+        const parsedCustomColumns = JSON.parse(customColumnsJson);
+        setCustomColumns(parsedCustomColumns.map((col: any) => col.column_name));
+        setCustomColumnsMap(parsedCustomColumns.reduce((acc: any, col: any) => {
+          acc[col.column_name] = col.column_display_name;
+          return acc;
+        }, {}));
+      }
+
+      console.log('Edit mode loaded successfully');
+    } catch (error) {
+      console.error('Error loading edit data:', error);
+      alert('Error loading invoice data for editing. Please try again.');
+    }
+  };
+
+  // Debug logging for PDF data
+  console.log('=== PDF DATA DEBUG ===');
+  console.log('Custom Columns:', customColumns);
+  console.log('Custom Columns Map:', customColumnsMap);
+  console.log('Items with custom data:', items);
+  console.log('Invoice Data:', invoiceData);
+
   // Check if PDF component is ready
   useEffect(() => {
     const checkPdfReady = () => {
-      if (taxableInvoicePdfRef.current?.downloadPDF) {
+      // Check the appropriate PDF component based on company name
+      let pdfRef = null;
+      if (companyName.includes('Global Trading Corporation')) {
+        pdfRef = gtcTaxableInvoicePdfRef.current;
+      } else if (companyName.includes('Rudharma')) {
+        pdfRef = rudharmaTaxableInvoicePdfRef.current;
+      } else {
+        pdfRef = taxableInvoicePdfRef.current;
+      }
+
+      if (pdfRef?.downloadPDF) {
         setPdfComponentReady(true);
-        console.log('Taxable invoice PDF component is ready');
+        console.log('Taxable invoice PDF component is ready for:', companyName);
         return true;
       }
       return false;
@@ -237,8 +482,23 @@ export default function CreateTaxableInvoice() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create Taxable Invoice</h1>
-              <p className="text-gray-600 mt-1">Generate professional taxable invoices with GST calculations</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {isEditMode ? 'Edit Taxable Invoice' : 'Create Taxable Invoice'}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {isEditMode
+                  ? `Editing invoice ${invoiceNumber} - Update invoice details and items`
+                  : 'Generate professional taxable invoices with GST calculations'
+                }
+              </p>
+              {isEditMode && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-800 text-sm">
+                    <strong>Edit Mode:</strong> You are editing an existing invoice.
+                    Changes will update the current invoice data.
+                  </p>
+                </div>
+              )}
             </div>
             <Link
               href="/"
@@ -672,7 +932,51 @@ export default function CreateTaxableInvoice() {
 
         {/* Action Buttons */}
         <div className="bg-white rounded-lg shadow-md p-6">
+          {/* Save Status */}
+          {saveStatus !== 'idle' && (
+            <div className="mb-4">
+              {saveStatus === 'saving' && (
+                <div className="flex items-center text-blue-600">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving invoice to database...
+                </div>
+              )}
+              {saveStatus === 'saved' && (
+                <div className="flex items-center text-green-600">
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Invoice saved successfully! ID: {savedInvoiceId}
+                </div>
+              )}
+              {saveStatus === 'error' && (
+                <div className="flex items-center text-red-600">
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                  Error saving invoice. Please try again.
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end space-x-4">
+            <button
+              onClick={saveInvoiceToDatabase}
+              disabled={isSaving}
+              className={`${isSaving ? 'bg-gray-400' : 'bg-purple-600 hover:bg-purple-700'} text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              {isSaving
+                ? (isEditMode ? 'Updating...' : 'Saving...')
+                : (isEditMode ? 'Update Invoice' : 'Save Invoice')
+              }
+            </button>
             <button
               onClick={handlePreview}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
@@ -692,9 +996,11 @@ export default function CreateTaxableInvoice() {
           </div>
         </div>
 
-        {/* Hidden PDF component for direct download */}
+        {/* Hidden PDF components for direct download */}
         <div style={{ display: 'none' }}>
           <TaxableInvoicePDF ref={taxableInvoicePdfRef} {...invoiceData} />
+          <GTCTaxableInvoicePDF ref={gtcTaxableInvoicePdfRef} {...invoiceData} />
+          <RudharmaTaxableInvoicePDF ref={rudharmaTaxableInvoicePdfRef} {...invoiceData} />
         </div>
 
         {/* PDF Preview Modal */}
@@ -708,5 +1014,23 @@ export default function CreateTaxableInvoice() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CreateTaxableInvoice() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-lg text-gray-600 mt-4">Loading invoice form...</p>
+        </div>
+      </div>
+    }>
+      <CreateTaxableInvoiceContent />
+    </Suspense>
   );
 }

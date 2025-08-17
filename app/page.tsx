@@ -363,16 +363,40 @@ export default function Home() {
                     Create professional taxable invoices with GST calculations, detailed itemization, and Hindi language support.
                   </p>
 
-                  <Link
-                    href="/taxable-invoice/create"
-                    className="group/btn relative bg-gradient-to-r from-green-600 to-emerald-600 text-white px-10 py-5 rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-500 flex items-center justify-center shadow-xl hover:shadow-2xl transform hover:scale-105 overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-4 group-hover/btn:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span className="text-lg font-semibold relative z-10">Create Tax Invoice</span>
-                  </Link>
+                  <div className="space-y-4">
+                    <Link
+                      href="/taxable-invoice/create"
+                      className="group/btn relative bg-gradient-to-r from-green-600 to-emerald-600 text-white px-10 py-5 rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-500 flex items-center justify-center shadow-xl hover:shadow-2xl transform hover:scale-105 overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-4 group-hover/btn:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span className="text-lg font-semibold relative z-10">Create Tax Invoice</span>
+                    </Link>
+
+                    <Link
+                      href="/taxable-invoice/list"
+                      className="group/btn relative bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-4 rounded-2xl hover:from-gray-700 hover:to-gray-800 transition-all duration-500 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 group-hover/btn:scale-110 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span className="relative z-10 text-base font-semibold">View Saved Invoices</span>
+                    </Link>
+
+                    <Link
+                      href="/reports"
+                      className="group/btn relative bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-500 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 group-hover/btn:scale-110 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <span className="relative z-10 text-base font-semibold">Sales Reports</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
 

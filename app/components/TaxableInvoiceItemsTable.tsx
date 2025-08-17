@@ -101,13 +101,13 @@ const TaxableInvoiceItemsTable: React.FC<TaxableInvoiceItemsTableProps> = ({
     const customCols = columns.filter(col => !col.isRequired);
 
     if (onCustomColumnsChange) {
-      const customColumns = customCols.map(col => col.name); // Column names for display
+      const customColumns = customCols.map(col => col.id); // Use column IDs as keys
       onCustomColumnsChange(customColumns);
     }
 
     if (onCustomColumnsMapChange) {
       const customColumnsMap = customCols.reduce((acc, col) => {
-        acc[col.name] = col.id; // Map display name to data key
+        acc[col.id] = col.name; // Map column ID to display name
         return acc;
       }, {} as {[key: string]: string});
       onCustomColumnsMapChange(customColumnsMap);
