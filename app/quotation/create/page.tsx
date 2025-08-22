@@ -14,8 +14,16 @@ const PDFPreviewModal = dynamic(() => import("../../components/PDFPreviewModal")
   loading: () => <div>Loading PDF...</div>
 });
 
-const QuotationPDF = dynamic(() => import("../../components/QuotationPDF"), {
-  ssr: false
+const ClientOnlyQuotationPDF = dynamic(() => import("../../components/ClientOnlyQuotationPDF"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-96">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading PDF component...</p>
+      </div>
+    </div>
+  )
 });
 
 // Define types for our quotation
@@ -34,9 +42,11 @@ interface QuotationData {
   customerName: string;
   customerAddress: string;
   customerEmail: string;
+  customerGST: string; // Add GST field
   customerPhone: string;
   subject?: string;
   forOption?: string; // New field for "For" option
+  companyName?: string; // Company name for PDF format selection
   items: QuotationItem[];
   notes: string;
   terms: string;
@@ -57,9 +67,11 @@ export default function CreateQuotation() {
     customerName: "",
     customerAddress: "",
     customerEmail: "",
+    customerGST: "", // Add GST field initialization
     customerPhone: "",
     subject: "",
     forOption: "", // New field for "For" option
+    companyName: "Global Digital Connect", // Add company name field
     items: [
       {
         id: "1",
@@ -123,7 +135,7 @@ export default function CreateQuotation() {
   const recalculateTotals = (updatedQuotation: QuotationData) => {
     const subtotal = updatedQuotation.items.reduce((sum, item) => {
       // Convert empty strings or undefined to 0
-      const amount = item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
+      const amount = typeof item.amount === "string" && item.amount === "" || item.amount === undefined ? 0 : Number(item.amount);
       return sum + amount;
     }, 0);
     const gstAmount = (subtotal * updatedQuotation.gstRate) / 100;
@@ -186,7 +198,7 @@ export default function CreateQuotation() {
       }
     } catch (error) {
       console.error('Direct download error:', error);
-      alert('Error downloading PDF: ' + error.message);
+      alert('Error downloading PDF: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -240,7 +252,7 @@ export default function CreateQuotation() {
 
       {/* Hidden PDF component for direct download */}
       <div style={{ display: 'none' }}>
-        <QuotationPDF ref={quotationPdfRef} quotation={quotation} />
+        <ClientOnlyQuotationPDF ref={quotationPdfRef} quotation={quotation} />
       </div>
 
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-xl p-6 md:p-8">
@@ -287,6 +299,23 @@ export default function CreateQuotation() {
               Your Company
             </h2>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <select
+                  value={quotation.companyName}
+                  onChange={(e) => setQuotation({ ...quotation, companyName: e.target.value })}
+                  className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                >
+                  <option value="Global Trading Corporation">Global Trading Corporation</option>
+                  <option value="Global Digital Connect">Global Digital Connect</option>
+                  <option value="Rudharma Enterprises">Rudharma Enterprises</option>
+                  <option value="SA Promotions">SA Promotions</option>
+                  <option value="Sanghi Stationers">Sanghi Stationers</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select your company to use the appropriate quotation format
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quotation Number</label>
                 <input
@@ -374,8 +403,8 @@ export default function CreateQuotation() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">GST No.</label>
                   <input
                     type="text"
-                    value={quotation.customerEmail}
-                    onChange={(e) => setQuotation({ ...quotation, customerEmail: e.target.value })}
+                    value={quotation.customerGST}
+                    onChange={(e) => setQuotation({ ...quotation, customerGST: e.target.value })}
                     className="block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                     placeholder="Enter GST Number"
                   />
@@ -406,7 +435,7 @@ export default function CreateQuotation() {
           <DynamicItemsTable
             initialItems={quotation.items}
             onItemsChange={(updatedItems) => {
-              const updatedQuotation = { ...quotation, items: updatedItems };
+              const updatedQuotation = { ...quotation, items: updatedItems as QuotationItem[] };
               recalculateTotals(updatedQuotation);
             }}
           />

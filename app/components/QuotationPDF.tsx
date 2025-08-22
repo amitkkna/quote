@@ -119,92 +119,76 @@ const styles = StyleSheet.create({
 
 // Create Document Component
 const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>(({ quotation }, ref) => {
-  // Debug logging
+  // Enhanced debug logging
+  console.log('=== QuotationPDF Debug ===');
   console.log('QuotationPDF received data:', quotation);
   console.log('Items array:', quotation?.items);
-  
+  console.log('Items length:', quotation?.items?.length);
+  console.log('Customer name:', quotation?.customerName);
+  console.log('Quotation number:', quotation?.quotationNumber);
+
+  // Check if quotation data exists
+  if (!quotation) {
+    console.error('No quotation data provided!');
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-red-600">No quotation data provided</p>
+        </div>
+      </div>
+    );
+  }
+
   // Use company-specific details or fallback to defaults
   const companyName = quotation.companyName || "Global Digital Connect";
   const companyAddress = quotation.companyAddress || "320, Regus, Magnato Mall, VIP Chowk, Raipur- 492006";
   const companyPhone = quotation.companyPhone || "9685047519";
   const companyEmail = quotation.companyEmail || "prateek@globaldigitalconnect.com";
 
-  // Create a simple working document
+  // Create a simple test document first
   const QuotationDocument = (
     <Document>
       <Page size="A4" style={styles.page}>
         <View>
-          {/* Header */}
+          {/* Simple Test Header */}
           <Text style={styles.header}>
-            {companyName}
+            TEST QUOTATION
           </Text>
           <Text style={styles.subHeader}>
-            QUOTATION
+            Global Digital Connect
           </Text>
-          
-          {/* Customer Info */}
+
+          {/* Basic Info */}
           <View style={styles.infoSection}>
             <Text style={styles.infoText}>
-              Customer: {quotation.customerName || 'N/A'}
+              Customer: {quotation?.customerName || 'Test Customer'}
             </Text>
             <Text style={styles.infoText}>
-              Address: {quotation.customerAddress || 'N/A'}
+              Quotation No: {quotation?.quotationNumber || 'TEST-001'}
             </Text>
             <Text style={styles.infoText}>
-              Quotation No: {quotation.quotationNumber || 'N/A'}
-            </Text>
-            <Text style={styles.infoText}>
-              Date: {quotation.date || 'N/A'}
+              Date: {quotation?.date || new Date().toLocaleDateString()}
             </Text>
           </View>
 
-          {/* Items Table */}
+          {/* Simple Items */}
           <View style={styles.infoSection}>
             <Text style={styles.tableHeader}>Items:</Text>
-            {quotation.items && quotation.items.length > 0 ? (
-              quotation.items.map((item, index) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={styles.serialCell}>{index + 1}.</Text>
-                  <Text style={styles.descriptionCell}>{item.description || 'No description'}</Text>
-                  <Text style={styles.amountCell}>₹{formatIndianNumber(item.amount || 0)}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.infoText}>No items found</Text>
-            )}
+            <Text style={styles.infoText}>Test Item 1 - ₹1,000</Text>
+            <Text style={styles.infoText}>Test Item 2 - ₹2,000</Text>
           </View>
 
-          {/* Totals */}
+          {/* Simple Totals */}
           <View style={styles.totalsSection}>
-            <Text style={styles.totalText}>
-              Subtotal: ₹{formatIndianNumber(quotation.subtotal || 0)}
-            </Text>
-            <Text style={styles.totalText}>
-              GST ({quotation.gstRate || 0}%): ₹{formatIndianNumber(quotation.gstAmount || 0)}
-            </Text>
-            <Text style={styles.grandTotal}>
-              Total: ₹{formatIndianNumber(quotation.total || 0)}
-            </Text>
-            <Text style={styles.infoText}>
-              Amount in Words: {quotation.amountInWords || 'Zero Rupees Only'}
-            </Text>
+            <Text style={styles.totalText}>Subtotal: ₹3,000</Text>
+            <Text style={styles.totalText}>GST (18%): ₹540</Text>
+            <Text style={styles.grandTotal}>Total: ₹3,540</Text>
           </View>
 
-          {/* Notes */}
-          {quotation.notes && (
-            <View style={[styles.infoSection, { marginTop: 20 }]}>
-              <Text style={styles.tableHeader}>Notes:</Text>
-              <Text style={styles.infoText}>{quotation.notes}</Text>
-            </View>
-          )}
-
-          {/* Terms */}
-          {quotation.terms && (
-            <View style={styles.infoSection}>
-              <Text style={styles.tableHeader}>Terms & Conditions:</Text>
-              <Text style={styles.infoText}>{quotation.terms}</Text>
-            </View>
-          )}
+          {/* Simple Footer */}
+          <View style={styles.infoSection}>
+            <Text style={styles.infoText}>Thank you for your business!</Text>
+          </View>
         </View>
       </Page>
     </Document>
@@ -240,13 +224,26 @@ const QuotationPDF = forwardRef<QuotationPDFRef, { quotation: QuotationData }>((
     }
   }));
 
-  return (
-    <ClientOnlyPDFViewer>
-      <PDFViewer style={{ width: '100%', height: '600px' }}>
-        {QuotationDocument}
-      </PDFViewer>
-    </ClientOnlyPDFViewer>
-  );
+  // Add error boundary and debugging
+  try {
+    return (
+      <ClientOnlyPDFViewer>
+        <PDFViewer style={{ width: '100%', height: '600px' }}>
+          {QuotationDocument}
+        </PDFViewer>
+      </ClientOnlyPDFViewer>
+    );
+  } catch (error) {
+    console.error('Error rendering PDF:', error);
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-red-600">Error loading PDF preview</p>
+          <p className="text-sm text-gray-500">Check console for details</p>
+        </div>
+      </div>
+    );
+  }
 });
 
 QuotationPDF.displayName = 'QuotationPDF';

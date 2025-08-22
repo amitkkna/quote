@@ -19,21 +19,7 @@ const nextConfig = {
     esmExternals: 'loose',
   },
   webpack: (config, { isServer }) => {
-    // Handle react-pdf ES module issues
-    if (isServer) {
-      config.externals = [
-        ...config.externals,
-        'canvas',
-        'jsdom',
-        '@react-pdf/renderer',
-        '@react-pdf/font',
-        '@react-pdf/layout',
-        '@react-pdf/primitives',
-        '@react-pdf/render',
-        '@react-pdf/types'
-      ];
-    }
-
+    // Simplified webpack config for react-pdf
     config.resolve.alias = {
       ...config.resolve.alias,
       canvas: false,
@@ -49,16 +35,9 @@ const nextConfig = {
       },
     });
 
-    // Exclude react-pdf from server-side bundling completely
+    // Only externalize canvas and jsdom on server
     if (isServer) {
-      config.externals.push(
-        '@react-pdf/renderer',
-        '@react-pdf/font',
-        '@react-pdf/layout',
-        '@react-pdf/primitives',
-        '@react-pdf/render',
-        '@react-pdf/types'
-      );
+      config.externals.push('canvas', 'jsdom');
     }
 
     return config;

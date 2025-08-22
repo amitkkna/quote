@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import InvoicePDF from './InvoicePDF';
 import QuotationPDF from './QuotationPDF';
 import GTCQuotationPDF from './GTCQuotationPDF';
+import GDCQuotationPDF from './GDCQuotationPDF';
 import RudharmaQuotationPDF from './RudharmaQuotationPDF';
 import SAPromotionsPDF from './SAPromotionsPDF';
 import SanghiStationersPDF from './SanghiStationersPDF';
@@ -37,6 +38,7 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   const invoicePdfRef = useRef<any>(null);
   const quotationPdfRef = useRef<any>(null);
   const gtcQuotationPdfRef = useRef<any>(null);
+  const gdcQuotationPdfRef = useRef<any>(null);
   const rudharmaQuotationPdfRef = useRef<any>(null);
   const saPromotionsPdfRef = useRef<any>(null);
   const sanghiStationersPdfRef = useRef<any>(null);
@@ -68,6 +70,7 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
         // Check all refs regardless of document type
         const refStatus = {
           gtcQuotation: !!gtcQuotationPdfRef.current?.downloadPDF,
+          gdcQuotation: !!gdcQuotationPdfRef.current?.downloadPDF,
           rudharmaQuotation: !!rudharmaQuotationPdfRef.current?.downloadPDF,
           quotation: !!quotationPdfRef.current?.downloadPDF,
           invoice: !!invoicePdfRef.current?.downloadPDF,
@@ -123,6 +126,7 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
         });
         console.log('Download methods available:', {
           gtcQuotation: !!gtcQuotationPdfRef.current?.downloadPDF,
+          gdcQuotation: !!gdcQuotationPdfRef.current?.downloadPDF,
           rudharmaQuotation: !!rudharmaQuotationPdfRef.current?.downloadPDF,
           quotation: !!quotationPdfRef.current?.downloadPDF,
           invoice: !!invoicePdfRef.current?.downloadPDF,
@@ -427,6 +431,7 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
 
         const allRefs = [
           { name: 'gtcQuotation', ref: gtcQuotationPdfRef },
+          { name: 'gdcQuotation', ref: gdcQuotationPdfRef },
           { name: 'rudharmaQuotation', ref: rudharmaQuotationPdfRef },
           { name: 'saPromotions', ref: saPromotionsPdfRef },
           { name: 'sanghiStationers', ref: sanghiStationersPdfRef },
@@ -531,6 +536,8 @@ const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
               // Render appropriate quotation PDF based on company
               data.companyName?.includes('Global Trading Corporation') ? (
                 <GTCQuotationPDF ref={gtcQuotationPdfRef} quotation={data} />
+              ) : data.companyName?.includes('Global Digital Connect') ? (
+                <GDCQuotationPDF ref={gdcQuotationPdfRef} quotation={data} />
               ) : data.companyName?.includes('Rudharma') ? (
                 <RudharmaQuotationPDF ref={rudharmaQuotationPdfRef} quotation={data} />
               ) : data.companyName?.includes('SA Promotions') ? (
